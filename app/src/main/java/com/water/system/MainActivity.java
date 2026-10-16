@@ -1,5 +1,4 @@
-package com.example.myapplication;
-
+package com.water.system;
 import android.app.*;
 import android.os.*;
 import android.graphics.Color;
