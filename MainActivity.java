@@ -8,6 +8,7 @@ import android.widget.*;
 import android.text.*;
 import android.content.*;
 import android.database.*;
+import android.database.sqlite.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
@@ -90,79 +91,4 @@ public class MainActivity extends Activity {
     }
 
     void confirmDelete(int id,String name){
-        new AlertDialog.Builder(this).setTitle("حذف المشترك").setMessage("هل تريد حذف المشترك "+name+"؟ سيتم حذف فواتيره وسندات قبضه أيضاً.").setPositiveButton("حذف",(a,b)->{
-            db.beginTransaction();try{String sid=String.valueOf(id);db.delete("invoices","subscriber_id=?",new String[]{sid});db.delete("receipts","subscriber_id=?",new String[]{sid});db.delete("subscribers","id=?",new String[]{sid});db.setTransactionSuccessful();}finally{db.endTransaction();}
-            msg("تم حذف المشترك وسجلاته");showSubscribers();
-        }).setNegativeButton("إلغاء",null).show();
-    }
-
-    void showInvoices(){
-        startPage("إصدار الفواتير");EditText search=input("ابحث بالاسم أو رقم المحل");mainLayout.addView(search);
-        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);mainLayout.addView(list);
-        Runnable refresh=()->{
-            list.removeAllViews();String q=search.getText().toString().trim();
-            Cursor c=db.rawQuery("SELECT id,name,shop FROM subscribers WHERE name LIKE ? OR shop LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});
-            while(c.moveToNext()){final int id=c.getInt(0);final String name=c.getString(1);final String shop=c.getString(2);list.addView(button(name+" - محل رقم "+shop,()->issueInvoice(id,name,shop)));}
-            c.close();
-        };
-        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){refresh.run();}public void afterTextChanged(Editable e){}});
-        refresh.run();
-    }
-
-    void issueInvoice(int subscriberId,String name,String shop){
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(16),dp(8),dp(16),dp(8));
-        EditText oldReading=input("القراءة السابقة للعداد");EditText newReading=input("القراءة الحالية للعداد");box.addView(oldReading);box.addView(newReading);
-        int arrears=subscriberArrears(subscriberId);int balance=invoiceBalance(subscriberId);
-        box.addView(text("المتأخرات السابقة: "+arrears+" ريال\nإجمالي المستحقات الحالية: "+balance+" ريال\nسعر الوحدة: "+price+" ريال",16));
-        new AlertDialog.Builder(this).setTitle("إصدار فاتورة: "+name).setView(box).setPositiveButton("إصدار الفاتورة",(d,w)->{
-            try{int oldV=readInt(oldReading);int newV=readInt(newReading);if(oldV<0||newV<oldV){msg("القراءة الحالية يجب أن تكون أكبر من أو تساوي السابقة");return;}
-            int units=newV-oldV;long amountLong=(long)units*price;if(amountLong>Integer.MAX_VALUE){msg("قيمة الفاتورة كبيرة جداً");return;}int amount=(int)amountLong;
-            ContentValues cv=new ContentValues();cv.put("subscriber_id",subscriberId);cv.put("old_reading",oldV);cv.put("new_reading",newV);cv.put("units",units);cv.put("amount",amount);cv.put("date",today());
-            long res=db.insert("invoices",null,cv);if(res!=-1){msg("تم إصدار الفاتورة\nالوحدات: "+units+"\nقيمة الفاتورة: "+amount+" ريال\nالإجمالي المتبقي: "+invoiceBalance(subscriberId)+" ريال");}else msg("تعذر حفظ الفاتورة");}catch(Exception e){msg("أدخل قراءات صحيحة");}
-        }).setNegativeButton("إلغاء",null).show();
-    }
-
-    int subscriberArrears(int subscriberId){Cursor c=db.rawQuery("SELECT COALESCE(previous,0) FROM subscribers WHERE id=?",new String[]{String.valueOf(subscriberId)});int r=0;if(c.moveToFirst())r=c.getInt(0);c.close();return r;}
-    int invoiceBalance(int subscriberId){
-        Cursor c=db.rawQuery("SELECT COALESCE(SUM(amount),0) FROM invoices WHERE subscriber_id=?",new String[]{String.valueOf(subscriberId)});c.moveToFirst();int inv=c.getInt(0);c.close();
-        Cursor r=db.rawQuery("SELECT COALESCE(SUM(amount),0) FROM receipts WHERE subscriber_id=?",new String[]{String.valueOf(subscriberId)});r.moveToFirst();int paid=r.getInt(0);r.close();
-        return inv+subscriberArrears(subscriberId)-paid;
-    }
-
-    void showReceipts(){
-        startPage("سند قبض");
-        EditText search=input("ابحث بالاسم أو رقم المحل");mainLayout.addView(search);
-        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);mainLayout.addView(list);
-        Runnable refresh=()->{
-            list.removeAllViews();String q=search.getText().toString().trim();
-            Cursor c=db.rawQuery("SELECT id,name,shop FROM subscribers WHERE name LIKE ? OR shop LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});
-            while(c.moveToNext()){
-                final int id=c.getInt(0);final String name=c.getString(1);final String shop=c.getString(2);
-                int bal=invoiceBalance(id);
-                list.addView(text(name+" - محل "+shop+"\nالمتبقي: "+bal+" ريال",16));
-                list.addView(button("إضافة سند قبض - "+name,()->addReceipt(id,name,bal)));
-            }c.close();
-        };
-        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int co,int af){}public void onTextChanged(CharSequence s,int st,int be,int co){refresh.run();}public void afterTextChanged(Editable e){}});
-        refresh.run();
-    }
-
-    void addReceipt(int subId,String name,int balance){
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(16),dp(8),dp(16),dp(8));
-        EditText amount=input("المبلغ المدفوع");box.addView(amount);box.addView(text("المتبقي الحالي: "+balance+" ريال",16));
-        new AlertDialog.Builder(this).setTitle("سند قبض: "+name).setView(box).setPositiveButton("حفظ", (d,w)->{
-            try{int am=readInt(amount);if(am<=0){msg("أدخل مبلغ صحيح");return;}
-            ContentValues cv=new ContentValues();cv.put("subscriber_id",subId);cv.put("amount",am);cv.put("date",today());
-            db.insert("receipts",null,cv);msg("تم حفظ سند القبض\nالمتبقي الجديد: "+invoiceBalance(subId)+" ريال");}catch(Exception e){msg("أدخل مبلغ صحيح");}
-        }).setNegativeButton("إلغاء",null).show();
-    }
-
-    void showStatement(){
-        startPage("كشف حساب");EditText search=input("رقم المحل أو الاسم");mainLayout.addView(search);
-        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);mainLayout.addView(list);
-        Runnable refresh=()->{
-            list.removeAllViews();String q=search.getText().toString().trim();if(q.isEmpty())return;
-            Cursor c=db.rawQuery("SELECT id,name,shop FROM subscribers WHERE name LIKE ? OR shop LIKE ? LIMIT 1",new String[]{"%"+q+"%","%"+q+"%"});
-            if(c.moveToFirst()){
-                int id=c.getInt(0);String name=c.getString(1);
-                list.addView(text("كشف حساب: "+name+"\nال
+        new AlertDialog.Builder(this).setTitle("حذف المشترك
