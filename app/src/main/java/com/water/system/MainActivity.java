@@ -2,16 +2,20 @@ package com.example.myapplication;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.WebChromeClient.FileChooserParams;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.ValueCallback;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceError;
 import android.widget.Toast;
+import android.view.View;
+import android.graphics.Color;
+import android.util.Log;
 
 public class MainActivity extends Activity {
 
@@ -19,180 +23,121 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileChooserCallback;
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
+    @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().setStatusBarColor(Color.rgb(0, 105, 92));
+        getWindow().setNavigationBarColor(Color.BLACK);
+
         webView = new WebView(this);
+        webView.setBackgroundColor(Color.WHITE);
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
 
-        // تفعيل JavaScript
         settings.setJavaScriptEnabled(true);
-
-        // تفعيل التخزين المحلي
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-
-        // السماح بتحميل الملفات المحلية من مجلد assets
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
-
-        // إعداد عرض التطبيق على الهاتف
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setSupportZoom(false);
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-
-        // السماح بالاتصالات الآمنة وغير الآمنة عند الحاجة
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
+        settings.setSupportMultipleWindows(false);
+        settings.setLoadsImagesAutomatically(true);
+        settings.setDefaultTextEncodingName("UTF-8");
         settings.setMixedContentMode(
                 WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         );
 
-        // التعامل مع الروابط داخل التطبيق
         webView.setWebViewClient(new WebViewClient() {
 
             @Override
             public boolean shouldOverrideUrlLoading(
-                    WebView view,
-                    WebResourceRequest request) {
+                    WebView view, WebResourceRequest request) {
 
                 Uri uri = request.getUrl();
-                String scheme = uri.getScheme();
 
-                if (scheme != null &&
-                        (scheme.equals("http") ||
-                         scheme.equals("https") ||
-                         scheme.equals("file") ||
-                         scheme.equals("content"))) {
-
-                    if ("http".equals(scheme) ||
-                            "https".equals(scheme)) {
-
-                        String host = uri.getHost();
-
-                        if (host != null &&
-                                !host.equals("accounts.google.com") &&
-                                !host.equals("google.com") &&
-                                !host.endsWith(".google.com")) {
-
-                            try {
-                                Intent intent = new Intent(
-                                        Intent.ACTION_VIEW, uri
-                                );
-                                startActivity(intent);
-                                return true;
-                            } catch (Exception e) {
-                                return false;
-                            }
-                        }
-                    }
-
-                    return false;
+                if ("http".equals(uri.getScheme())
+                        || "https".equals(uri.getScheme())) {
+                    view.loadUrl(uri.toString());
+                    return true;
                 }
 
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                    startActivity(intent);
-                    return true;
-                } catch (Exception e) {
+                return false;
+            }
+
+            @Override
+            public void onReceivedError(
+                    WebView view,
+                    WebResourceRequest request,
+                    WebResourceError error) {
+
+                super.onReceivedError(view, request, error);
+
+                if (request.isForMainFrame()) {
+                    Log.e("WaterApp",
+                            "Page loading error: "
+                                    + error.getDescription());
                     Toast.makeText(
                             MainActivity.this,
-                            "لا يمكن فتح هذا الرابط",
-                            Toast.LENGTH_SHORT
+                            "تعذر تحميل صفحة التطبيق. تحقق من ملفات التطبيق.",
+                            Toast.LENGTH_LONG
                     ).show();
-                    return true;
                 }
             }
         });
 
-        // دعم اختيار الصور والملفات من صفحات HTML
         webView.setWebChromeClient(new WebChromeClient() {
 
             @Override
             public boolean onShowFileChooser(
-                    WebView webView,
-                    ValueCallback<Uri[]> filePathCallback,
-                    FileChooserParams fileChooserParams) {
+                    WebView view,
+                    ValueCallback<Uri[]> callback,
+                    FileChooserParams params) {
 
                 if (fileChooserCallback != null) {
                     fileChooserCallback.onReceiveValue(null);
                 }
 
-                fileChooserCallback = filePathCallback;
+                fileChooserCallback = callback;
 
                 try {
-                    Intent intent =
-                            fileChooserParams.createIntent();
-
+                    Intent intent = params.createIntent();
                     startActivityForResult(
-                            intent,
-                            FILE_CHOOSER_REQUEST
-                    );
-
+                            intent, FILE_CHOOSER_REQUEST);
+                    return true;
                 } catch (Exception e) {
-
                     fileChooserCallback = null;
-
                     Toast.makeText(
                             MainActivity.this,
                             "تعذر فتح اختيار الملفات",
-                            Toast.LENGTH_LONG
+                            Toast.LENGTH_SHORT
                     ).show();
-
                     return false;
                 }
-
-                return true;
             }
         });
 
-        // فتح ملف التطبيق من مجلد assets
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    // استلام الملف الذي اختاره المستخدم
     @Override
     protected void onActivityResult(
-            int requestCode,
-            int resultCode,
-            Intent data) {
+            int requestCode, int resultCode, Intent data) {
 
-        super.onActivityResult(
-                requestCode,
-                resultCode,
-                data
-        );
+        super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == FILE_CHOOSER_REQUEST) {
-
-            if (fileChooserCallback == null) {
-                return;
-            }
+        if (requestCode == FILE_CHOOSER_REQUEST
+                && fileChooserCallback != null) {
 
             Uri[] results = null;
 
             if (resultCode == RESULT_OK && data != null) {
+                Uri uri = data.getData();
 
-                if (data.getClipData() != null) {
-
-                    int count = data.getClipData().getItemCount();
-                    results = new Uri[count];
-
-                    for (int i = 0; i < count; i++) {
-                        results[i] =
-                                data.getClipData()
-                                        .getItemAt(i)
-                                        .getUri();
-                    }
-
-                } else if (data.getData() != null) {
-
-                    results = new Uri[]{
-                            data.getData()
-                    };
+                if (uri != null) {
+                    results = new Uri[]{uri};
                 }
             }
 
@@ -201,10 +146,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    // زر الرجوع في الهاتف
     @Override
     public void onBackPressed() {
-
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
         } else {
@@ -212,17 +155,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    // تحرير الموارد عند إغلاق التطبيق
     @Override
     protected void onDestroy() {
-
-        if (fileChooserCallback != null) {
-            fileChooserCallback.onReceiveValue(null);
-            fileChooserCallback = null;
-        }
-
         if (webView != null) {
             webView.stopLoading();
+            webView.setWebChromeClient(null);
+            webView.setWebViewClient(null);
             webView.destroy();
             webView = null;
         }
