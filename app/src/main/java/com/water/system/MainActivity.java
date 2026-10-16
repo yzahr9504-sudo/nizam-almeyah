@@ -16,18 +16,14 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ValueCallback<Uri[]> fileChooserCallback;
-
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         webView = new WebView(this);
         setContentView(webView);
-
         WebSettings settings = webView.getSettings();
-
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
@@ -36,112 +32,52 @@ public class MainActivity extends Activity {
         settings.setSupportMultipleWindows(false);
 
         webView.setWebViewClient(new WebViewClient() {
-
             @Override
-            public boolean shouldOverrideUrlLoading(
-                    WebView view,
-                    WebResourceRequest request) {
-
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String scheme = uri.getScheme();
-
-                if (scheme != null &&
-                        (scheme.equals("http")
-                        || scheme.equals("https")
-                        || scheme.equals("file")
-                        || scheme.equals("content"))) {
-
+                if (scheme != null && (scheme.equals("http") || scheme.equals("https") || scheme.equals("file") || scheme.equals("content"))) {
                     return false;
                 }
-
                 try {
-                    startActivity(
-                            new Intent(Intent.ACTION_VIEW, uri)
-                    );
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
                 } catch (Exception e) {
-                    Toast.makeText(
-                            MainActivity.this,
-                            "تعذر فتح الرابط",
-                            Toast.LENGTH_SHORT
-                    ).show();
+                    Toast.makeText(MainActivity.this, "تعذر فتح الرابط", Toast.LENGTH_SHORT).show();
                 }
-
                 return true;
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
-
             @Override
-            public boolean onShowFileChooser(
-                    WebView webView,
-                    ValueCallback<Uri[]> filePathCallback,
-                    FileChooserParams fileChooserParams) {
-
-                if (fileChooserCallback != null) {
-                    fileChooserCallback.onReceiveValue(null);
-                }
-
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                if (fileChooserCallback != null) fileChooserCallback.onReceiveValue(null);
                 fileChooserCallback = filePathCallback;
-
                 Intent intent = fileChooserParams.createIntent();
-
                 try {
-                    startActivityForResult(
-                            intent,
-                            FILE_CHOOSER_REQUEST
-                    );
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST);
                 } catch (Exception e) {
-
                     fileChooserCallback = null;
-
-                    Toast.makeText(
-                            MainActivity.this,
-                            "تعذر فتح اختيار الملفات",
-                            Toast.LENGTH_SHORT
-                    ).show();
-
+                    Toast.makeText(MainActivity.this, "تعذر فتح اختيار الملفات", Toast.LENGTH_SHORT).show();
                     return false;
                 }
-
                 return true;
             }
         });
 
-        // تشغيل تطبيق نظام المياه
-        // يجب وضع ملف HTML داخل مجلد assets
         webView.loadUrl("file:///android_asset/index.html");
     }
 
     @Override
-    protected void onActivityResult(
-            int requestCode,
-            int resultCode,
-            Intent data) {
-
-        super.onActivityResult(
-                requestCode,
-                resultCode,
-                data
-        );
-
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FILE_CHOOSER_REQUEST) {
-
-            if (fileChooserCallback == null) {
-                return;
-            }
-
+            if (fileChooserCallback == null) return;
             Uri[] results = null;
-
             if (resultCode == RESULT_OK && data != null) {
-
                 Uri result = data.getData();
-
-                if (result != null) {
-                    results = new Uri[]{result};
-                }
+                if (result != null) results = new Uri[]{result};
             }
-
             fileChooserCallback.onReceiveValue(results);
             fileChooserCallback = null;
         }
@@ -149,11 +85,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        if (webView != null && webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
     }
 }
