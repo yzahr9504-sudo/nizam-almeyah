@@ -30,7 +30,7 @@ body{margin:0;background:#f1f5ff;color:#172033}
   <div class="grid">
     <div class="card" onclick="openV('tahseel')"><div>💰</div><b>سند قبض</b></div>
     <div class="card" onclick="openV('sarf')"><div>💸</div><b>سند صرف</b></div>
-    <div class="card" onclick="openV('fawater')"><div>🧾</div><b>إصدار فواتير ×600</b></div>
+    <div class="card" onclick="openV('fawater')"><div>🧾</div><b>إصدار فواتير</b></div>
     <div class="card" style="background:#e0f2fe;border:2px solid #0ea5e9" onclick="openV('moshtarakin')"><div>👥</div><b>خانة المشتركين</b><br><small id="homeCount">0 مشترك</small></div>
     <div class="card" onclick="openV('sync')"><div>☁️⬆️</div><b>مزامنة البيانات</b></div>
     <div class="card" onclick="openV('download')"><div>☁️⬇️</div><b>تحميل البيانات</b></div>
@@ -75,7 +75,7 @@ body{margin:0;background:#f1f5ff;color:#172033}
 </div>
 
 <div id="fawater" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>إصدار فواتير - 600 ريال للوحدة</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>إصدار فواتير</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
   <button class="btn" style="background:#7c3aed" onclick="startBarcodeScan()">▦ تصوير باركود المشترك بالكاميرا</button>
   <input id="barcodePhoto" type="file" accept="image/*" capture="environment" style="display:none" onchange="readBarcodePhoto(event)">
   <div id="scanPanel" style="display:none;margin:8px 0;padding:10px;background:#f8fafc;border-radius:10px"><div id="scanStatus" style="font-size:13px;margin:6px 0">سيتم فتح كاميرا الهاتف لتصوير الباركود؛ لا حاجة لمعاينة فيديو سوداء.</div></div>
@@ -95,32 +95,10 @@ body{margin:0;background:#f1f5ff;color:#172033}
       <img id="meterPreview" alt="صورة العداد" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:6px 0">
       <button class="btn" style="background:#0f766e" onclick="readMeterPhoto()">🔎 قراءة الأرقام من الصورة</button>
       <div id="ocrStatus" style="font-size:13px;color:#64748b">التقط صورة واضحة للعداد. تُحفظ الصورة مع الفاتورة؛ قراءة الأرقام تلقائيًا تحتاج اتصالًا بالإنترنت.</div>
-      <button class="btn" onclick="calcF()">احسب الفاتورة ×600</button>
+      <button class="btn" onclick="calcF()">احسب الفاتورة</button>
       <div id="fRes" style="font-size:18px;margin:10px 0"></div>
     </div>
     <button class="btn btn-green" onclick="saveInvoice()">💾 حفظ الفاتورة وتحديث القراءة</button>
     <button class="btn" onclick="window.print()">🖨️ طباعة الفاتورة</button>
   </div>
-</div>
-
-<div id="tahseel" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center"><h3>💰 سند قبض</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <input id="pSearch" class="input" placeholder="ابحث بالاسم أو رقم العداد" oninput="pFilter()">
-  <div id="pList"></div>
-  <div id="pForm" style="display:none">
-    <p>المشترك: <b id="pName"></b></p><p>المتأخرات الحالية: <b id="pBalance"></b> ريال</p>
-    <input id="pAmount" class="input" type="number" min="1" placeholder="مبلغ القبض">
-    <input id="pNote" class="input" placeholder="ملاحظات (اختياري)">
-    <button class="btn btn-green" onclick="savePayment()">حفظ سند القبض</button>
-    <div id="pResult"></div>
-  </div>
-</div>
-
-<div id="sarf" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center"><h3>💸 سند صرف</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <input id="sarfAmount" class="input" type="number" min="1" placeholder="مبلغ الصرف">
-  <input id="sarfNote" class="input" placeholder="بيان الصرف">
-  <label>تصنيف المصروف</label><select id="sarfCategory" class="input"><option>صيانة</option><option>كهرباء</option><option>وقود</option><option>رواتب</option><option>مستلزمات</option><option>نقل</option><option>أخرى</option></select>
-  <button class="btn" onclick="saveSarf()">حفظ سند الصرف</button>
-  <div id="sarfList"></div>
 </div>
