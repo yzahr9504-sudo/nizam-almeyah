@@ -3,410 +3,747 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>5.28 - طباعة رقم فقط - مسح بيانات كاملة</title>
+<title>نظام المياه 5.22 - الصرفيات</title>
 <style>
-body{background:#eef3ff;margin:0;font-family:Tahoma}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
-.card{background:#fff;border-radius:16px;padding:18px;text-align:center;box-shadow:0 2px 6px #0001;border:2px solid #ddd}
-.page{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#eef3ff;z-index:99;overflow:auto}
-.page.active{display:block}
-.top{background:#fff;padding:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;position:sticky;top:0}
-.white{background:#fff;margin:12px;padding:12px;border-radius:14px}
-.input{width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;margin-bottom:8px;font-size:14px}
-.btn{border:none;padding:12px 16px;border-radius:10px;font-weight:800;color:#fff;margin:4px;cursor:pointer}
-.btn-green{background:#0bb350}.btn-blue{background:#2563eb}.btn-purple{background:#7c3aed}.btn-gray{background:#6b7280}.btn-red{background:#ef4444}
-#reader{width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:320px}
-.scan-box{border:2px dashed #2563eb;border-radius:14px;padding:12px;background:#f0f8ff}
-.found-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:14px;padding:14px;margin-top:12px}
-.barcode-big{font-size:26px;font-weight:900;letter-spacing:1px;border:3px solid #000;padding:12px;display:inline-block;background:#fff;word-break:break-all;max-width:100%}
-.name-big{font-size:26px;font-weight:900;color:#000;margin:10px 0}
+*{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif}
+body{margin:0;background:#f1f5ff;color:#172033}
+.top{background:#7ec8e6;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:white;font-weight:bold}.brand{display:flex;align-items:center;gap:9px;min-width:0}.brand img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:9px;padding:3px}.brand-name{overflow-wrap:anywhere}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;max-width:760px;margin:auto}
+.card{background:white;padding:18px 8px;border-radius:16px;text-align:center;box-shadow:0 4px 12px #0001;cursor:pointer}
+.card b{font-size:13px}
+.view{display:none;max-width:760px;margin:10px auto;background:white;border-radius:12px;padding:12px}
+.btn{background:#2563eb;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:8px;cursor:pointer}
+.btn-green{background:#16a34a}
+.input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:6px 0;background:#fff}
+.row{display:flex;justify-content:space-between;gap:8px;padding:10px;border-bottom:1px solid #eee;align-items:center}
+.badge{background:#dcfce7;color:#166534;padding:4px 8px;border-radius:12px;font-size:11px;white-space:nowrap}
+.empty{text-align:center;color:#64748b;padding:24px 8px;background:#f8fafc;border-radius:10px;margin-top:8px}
+.small-btn{padding:6px 9px;border:0;border-radius:7px;cursor:pointer;margin-top:4px}
+@media(max-width:430px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:15px 6px}}
+@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;inset:0;padding:20px}}
 </style>
-<script>
-function openPage(id){
-  if(id=='main'){
-    document.getElementById('main').style.display='block';
-    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
-    stopScan(); return;
-  }
-  document.getElementById('main').style.display='none';
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
-  var t=document.getElementById(id);
-  if(t) t.classList.add('active');
-  if(id=='mosh') render();
-  if(id=='faw'){ checkSubs(); updatePriceDisplay(); }
-  if(id=='sij') renderInvoices();
-  if(id=='set') loadSettingsPage();
-}
-window.openPage=openPage;
-window.openP=openPage;
-</script>
+<script id="googleIdentityScript" src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-
-<div id="main">
-<div style="background:#6ec8ff;color:#fff;padding:16px;text-align:center"><h2>نظام المياه 5.28</h2><p>طباعة: رقم العداد فقط - مسح: بيانات كاملة</p></div>
-<div class="grid">
-<div class="card" onclick="openPage('mosh')" style="border-color:#2563eb;background:#e6f0ff"><div style="font-size:30px">👥</div><b>خانة المشتركين</b><div id="dc" style="font-size:12px">0 مشترك</div></div>
-<div class="card" onclick="openPage('faw')" style="border-color:#7c3aed"><div style="font-size:30px">🧾</div><b>إصدار فواتير</b><div style="font-size:11px">مسح يظهر بيانات كاملة</div></div>
-<div class="card" onclick="openPage('set')" style="border-color:green;background:#f0fdf4"><div style="font-size:30px">⚙️</div><b>الإعدادات</b><div id="priceBadge" style="font-size:12px;color:green;font-weight:800">السعر: 0</div></div>
-<div class="card" onclick="openPage('sij')"><div>🗂️</div><b>السجلات</b></div>
-</div>
-</div>
-
-<div id="mosh" class="page">
-<div class="top"><button onclick="openPage('main')">← رجوع</button><b>👥 المشتركين</b></div>
-<div class="white">
-<div style="display:flex;gap:6px"><button class="btn btn-green" onclick="addM()">+ إضافة مشترك</button><input class="input" id="sSearch" style="margin:0" placeholder="بحث برقم العداد أو الاسم 🔍" oninput="render()"></div>
-<div id="list"></div>
-<div id="empty" style="text-align:center;color:#888;padding:20px;margin-top:10px;background:#f8f9ff;border-radius:10px">لا يوجد مشتركون</div>
-</div>
-</div>
-
-<div id="faw" class="page">
-<div class="top"><button onclick="openPage('main')">← رجوع</button><b>إصدار فواتير - المسح يظهر بيانات كاملة</b></div>
-<div class="white">
-<div class="scan-box">
-<h3 style="text-align:center">📷 تصوير باركود رقم العداد</h3>
-<p style="font-size:11px;color:#666;text-align:center">عند المسح سيظهر الاسم ورقم العداد والهاتف وآخر قراءة والحساب حسب الإعدادات</p>
-<div style="background:#fff;padding:8px;border-radius:8px;text-align:center;margin:6px 0">سعر الوحدة: <b id="currentPriceDisplay" style="color:#0bb350">0</b> ريال <button class="btn btn-gray" style="padding:4px 8px;font-size:11px" onclick="openPage('set')">تغيير</button></div>
-<button id="scanBtn" class="btn btn-purple" style="width:100%;padding:14px;font-size:16px" onclick="startScan()">▦ افتح الكاميرا لمسح الباركود</button>
-<div id="reader" style="display:none;margin-top:10px"></div>
-<button id="stopBtn" class="btn btn-red" style="width:100%;display:none;margin-top:8px" onclick="stopScan()">⏹️ إيقاف</button>
-<p id="camStatus" style="font-size:11px;color:#666;text-align:center;margin-top:6px"></p>
+<div id="home">
+  <div class="top"><div class="brand"><img id="appLogo" alt="شعار التطبيق" style="display:none"><span id="defaultLogo" aria-hidden="true" style="font-size:30px">💧</span><span class="brand-name">نظام المياه</span></div><span>⚙️</span></div>
+  <div class="grid">
+    <div class="card" onclick="openV('tahseel')"><div>💰</div><b>سند قبض</b></div>
+    <div class="card" onclick="openV('sarf')"><div>💸</div><b>الصرفيات</b></div>
+    <div class="card" onclick="openV('fawater')"><div>🧾</div><b>إصدار فواتير</b></div>
+    <div class="card" style="background:#e0f2fe;border:2px solid #0ea5e9" onclick="openV('moshtarakin')"><div>👥</div><b>خانة المشتركين</b><br><small id="homeCount">0 مشترك</small></div>
+    <div class="card" onclick="openV('sync')"><div>☁️⬆️</div><b>مزامنة البيانات</b></div>
+    <div class="card" onclick="openV('download')"><div>☁️⬇️</div><b>تحميل البيانات</b></div>
+    <div class="card" onclick="openV('kashf')"><div>📊</div><b>كشف حساب</b></div>
+    <div class="card" onclick="openV('settings')"><div>⚙️</div><b>الإعدادات</b></div>
+    <div class="card" onclick="openV('records')"><div>🗂️</div><b>آخر السجلات</b></div>
+    <div class="card" onclick="openV('adjustments')"><div>➖</div><b>تسوية / مبلغ بالسالب</b></div>
+    <div class="card" onclick="openV('bulk')"><div>📨</div><b>رسائل جماعية</b></div>
+    <div class="card" onclick="openV('reports')"><div>📈</div><b>تقارير الحسابات</b></div>
+    <div class="card" style="background:#dcfce7;border:2px solid #16a34a" onclick="openV('cashboxes')"><div>🔐</div><b>إدارة صناديق المحصّلين</b></div>
+  </div>
 </div>
 
-<div id="foundBox" class="found-box" style="display:none">
-<h3 style="color:#15803d">✅ تم العثور على المشترك - بيانات كاملة</h3>
-<div style="background:#fff;border-radius:12px;padding:14px;margin:10px 0;border:2px solid #22c55e">
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:right">
-<div><small style="color:#666">رقم العداد:</small><br><b id="foundCode" style="font-size:20px;color:#0369a1"></b></div>
-<div><small style="color:#666">اسم المشترك:</small><br><b id="foundName" style="font-size:18px"></b></div>
-</div>
-<div id="foundDetails" style="font-size:14px;color:#333;line-height:2;margin-top:12px;background:#f8f9ff;padding:10px;border-radius:8px"></div>
-</div>
-
-<label style="font-weight:700">القراءة الحالية *</label>
-<input class="input" id="reading" type="number" placeholder="أدخل قراءة العداد">
-<div style="background:#fff;padding:12px;border-radius:10px;margin:8px 0;text-align:center;border:1px solid #ddd;line-height:1.8">
-السابقة: <b id="prevReading">0</b> | الحالية: <b id="currReading">0</b><br>
-الاستهلاك: <b id="consumption">0</b> وحدة<br>
-سعر الوحدة: <b id="pricePerUnit">0</b> ريال<br>
-<div style="font-size:22px;margin-top:6px">الإجمالي: <b id="totalAmount" style="color:#0bb350">0 ريال</b></div>
-<small id="calcFormula" style="color:#666"></small>
-</div>
-
-<button class="btn btn-green" style="width:100%;padding:14px" onclick="saveInvoice()">💾 حفظ الفاتورة</button>
-<button class="btn btn-blue" style="width:100%" onclick="printInvoice()">🖨️ طباعة الفاتورة</button>
-<button class="btn btn-gray" style="width:100%" onclick="clearFound()">مسح وإعادة مسح</button>
-</div>
-
-<div style="margin-top:14px">
-<label style="font-weight:800">🔍 أو اكتب رقم العداد يدوياً</label>
-<input class="input" id="manualSearch" placeholder="اكتب رقم العداد أو الاسم" oninput="manualSearch()" style="border-color:#7c3aed;border-width:2px">
-<div id="manualList"></div>
-</div>
-<div id="noSubs" style="text-align:center;color:#999;padding:16px;background:#f8f9ff;border-radius:10px;margin-top:10px">لا يوجد مشتركون</div>
-</div>
+<div id="moshtarakin" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>👥 خانة المشتركين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div style="display:flex;gap:6px;align-items:center">
+    <input id="searchMos" class="input" placeholder="🔍 بحث بالاسم أو رقم العداد/المحل" oninput="filterMos()" style="flex:1;min-width:0">
+    <button onclick="showAdd()" style="padding:10px 14px;background:#16a34a;color:white;border:none;border-radius:10px;white-space:nowrap">+ إضافة</button>
+  </div>
+  <div id="addForm" style="display:none;background:#f8fafc;padding:12px;border-radius:10px;margin:8px 0">
+    <input id="newName" class="input" placeholder="اسم المشترك">
+    <input id="newNo" class="input" placeholder="رقم العداد / المحل">
+    <input id="newArea" class="input" placeholder="المنطقة">
+    <input id="newPhone" class="input" type="tel" placeholder="رقم الهاتف">
+    <input id="newPrev" class="input" type="number" min="0" placeholder="القراءة السابقة" value="0">
+    <button class="btn btn-green" onclick="addMos()">💾 حفظ المشترك</button>
+    <button class="btn" style="background:#e5e7eb;color:#111" onclick="hideAdd()">إلغاء</button>
+  </div>
+  <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+    <button class="btn" style="background:#0ea5e9;width:auto;padding:8px 12px;margin:0" onclick="exportExcel()">📥 تصدير CSV لبرنامج Excel</button>
+    <label class="btn" style="background:#f59e0b;width:auto;padding:8px 12px;margin:0;cursor:pointer"><input type="file" accept=".csv,.txt" hidden onchange="importCSV(event)">📤 استيراد CSV</label>
+    <label class="btn" style="background:#7c3aed;width:auto;padding:8px 12px;margin:0;cursor:pointer"><input type="file" accept="application/pdf,.pdf" hidden onchange="importPDFSubscribers(event)">📄 استيراد مشتركين PDF</label>
+    <button class="btn" style="background:#0f766e;width:auto;padding:8px 12px;margin:0" onclick="exportSubscribersPDF()">🖨️ تصدير المشتركين PDF</button>
+    <button class="btn" style="background:#64748b;width:auto;padding:8px 12px;margin:0" onclick="selectVisibleBarcodes(true)">☑ تحديد الظاهر</button>
+    <button class="btn" style="background:#64748b;width:auto;padding:8px 12px;margin:0" onclick="selectVisibleBarcodes(false)">☐ إلغاء التحديد</button>
+    <button class="btn" style="background:#7c3aed;width:auto;padding:8px 12px;margin:0" onclick="exportSelectedBarcodesPDF()">▦ تصدير المحدد PDF</button>
+    <button class="btn" style="background:#0f766e;width:auto;padding:8px 12px;margin:0" onclick="exportAllBarcodesPDF()">▦ تصدير الكل PDF</button>
+  </div>
+  <div id="barcodeSelectionCount" style="font-weight:bold;color:#6d28d9;margin:8px 0">الباركودات المحددة: 0</div><div id="mosList"></div>
+  <div id="qrModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeQR()"><div style="background:#fff;border-radius:14px;padding:18px;text-align:center;width:min(340px,100%)"><h3>باركود المشترك</h3><div id="qrSubscriberName"></div><div id="qrCanvas" style="display:flex;justify-content:center;margin:12px"></div><p id="qrSubscriberNo"></p><button class="btn" onclick="window.print()">🖨️ طباعة الباركود</button><button class="btn" style="background:#64748b" onclick="closeQR()">إغلاق</button></div></div>
+  <div id="mosCount" style="text-align:center;color:#666;margin:10px"></div>
 </div>
 
-<div id="set" class="page">
-<div class="top"><button onclick="openPage('main')">← رجوع</button><b>⚙️ الإعدادات</b></div>
-<div class="white">
-<h3>💰 سعر وحدة المياه</h3>
-<input class="input" id="unitPrice" type="number" placeholder="مثال: 500" style="font-size:18px;font-weight:800;border-color:green;border-width:2px">
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">
-<button class="btn btn-gray" onclick="setPrice(500)">500</button>
-<button class="btn btn-green" onclick="setPrice(600)">600</button>
-<button class="btn btn-blue" onclick="setPrice(1000)">1000</button>
-</div>
-<button class="btn btn-green" style="width:100%;padding:14px" onclick="saveSettings()">💾 حفظ السعر</button>
-<div style="background:#f0fdf4;border:1px solid #22c55e;border-radius:10px;padding:12px;margin-top:14px">
-<p>معاينة: 10 وحدات × <b id="previewPrice">0</b> = <b id="previewTotal" style="color:green">0 ريال</b></p>
-</div>
-</div>
-</div>
-
-<div id="sij" class="page"><div class="top"><button onclick="openPage('main')">← رجوع</button><b>آخر السجلات</b></div><div class="white"><div id="invoicesLog"></div></div></div>
-
-<div id="addModal" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:200;padding:14px">
-<div style="background:#fff;border-radius:16px;padding:16px;width:100%;max-width:380px">
-<h3 style="text-align:center">إضافة مشترك</h3>
-<input class="input" id="n_name" placeholder="اسم المشترك *">
-<input class="input" id="n_no" placeholder="رقم العداد *" style="border-color:blue;border-width:2px;font-weight:800">
-<input class="input" id="n_phone" placeholder="الهاتف (اختياري)">
-<div style="text-align:center;background:#f8f9ff;padding:12px;border-radius:10px;margin:8px 0;border:2px dashed #22c55e">
-<div style="font-size:12px;color:#666">الباركود سيكون:</div>
-<div id="prevBox" style="font-size:22px;font-weight:900;margin:6px 0">---</div>
-<div id="prevName" style="font-size:14px;color:#000;font-weight:700"></div>
-</div>
-<button class="btn btn-green" style="width:100%" onclick="saveM()">💾 حفظ</button>
-<button style="width:100%;margin-top:8px;padding:12px;border:none;background:#f1f2f6;border-radius:10px" onclick="document.getElementById('addModal').style.display='none'">إلغاء</button>
-</div>
+<div id="fawater" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>إصدار فواتير</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <button class="btn" style="background:#7c3aed" onclick="startBarcodeScan()">▦ تصوير باركود المشترك بالكاميرا</button>
+  <input id="barcodePhoto" type="file" accept="image/*" capture="environment" style="display:none" onchange="readBarcodePhoto(event)">
+  <div id="scanPanel" style="display:none;margin:8px 0;padding:10px;background:#f8fafc;border-radius:10px"><div id="scanStatus" style="font-size:13px;margin:6px 0">سيتم فتح كاميرا الهاتف لتصوير الباركود؛ لا حاجة لمعاينة فيديو سوداء.</div></div>
+  <input id="fSearch" class="input" placeholder="ابحث برقم العداد أو اسم المشترك" oninput="fFilter()">
+  <div id="fList"></div>
+  <div id="fForm" style="display:none">
+    <div id="printArea">
+      <h3>فاتورة مياه</h3>
+      <p>المشترك: <b id="fName"></b></p>
+      <p>رقم العداد/المحل: <b id="fNo"></b></p>
+      <p>القراءة السابقة: <b id="fPrev"></b></p>
+      <label for="fCurr">القراءة الحالية</label>
+      <input id="fCurr" class="input" type="number" min="0" placeholder="أدخل القراءة الحالية">
+      <label>📷 تصوير العداد</label>
+      <button type="button" class="btn" style="background:#0f766e" onclick="openMeterCamera()">📸 فتح الكاميرا مباشرة لتصوير العداد</button>
+      <input id="meterPhoto" class="input" type="file" accept="image/*" capture="environment" onchange="previewMeterPhoto(event)" style="display:none">
+      <img id="meterPreview" alt="صورة العداد" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:6px 0">
+      <button class="btn" style="background:#0f766e" onclick="readMeterPhoto()">🔎 قراءة الأرقام من الصورة</button>
+      <div id="ocrStatus" style="font-size:13px;color:#64748b">التقط صورة واضحة للعداد. تُحفظ الصورة مع الفاتورة؛ قراءة الأرقام تلقائيًا تحتاج اتصالًا بالإنترنت.</div>
+      <button class="btn" onclick="calcF()">احسب الفاتورة</button>
+      <div id="fRes" style="font-size:18px;margin:10px 0"></div>
+    </div>
+    <button class="btn btn-green" onclick="saveInvoice()">💾 حفظ الفاتورة وتحديث القراءة</button>
+    <button class="btn" onclick="window.print()">🖨️ طباعة الفاتورة</button>
+  </div>
 </div>
 
-<div id="barcodeModal" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:300;padding:14px">
-<div style="background:#fff;border-radius:16px;padding:18px;width:100%;max-width:380px;text-align:center">
-<h3 id="bcName" style="font-size:22px;margin-bottom:4px"></h3>
-<p id="bcNo" style="color:#0369a1;font-weight:800;font-size:14px"></p>
-<div id="bcBig" class="barcode-big" style="font-size:28px;margin:12px 0">---</div>
-<div style="font-size:14px;color:#000;font-weight:700" id="bcUnderText"></div>
-<div style="font-size:11px;color:#666;word-break:break-all;margin-top:6px" id="bcFullText"></div>
-<br><button class="btn btn-blue" style="width:100%;margin-top:12px" onclick="printBarcode()">🖨️ طباعة - تحت الباركود رقم العداد فقط</button>
-<button style="width:100%;margin-top:8px;padding:10px;border:none;background:#f1f2f6;border-radius:10px" onclick="document.getElementById('barcodeModal').style.display='none'">إغلاق</button>
-</div>
+<div id="tahseel" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>💰 سند قبض</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <input id="pSearch" class="input" placeholder="ابحث بالاسم أو رقم العداد" oninput="pFilter()">
+  <div id="pList"></div>
+  <div id="pForm" style="display:none">
+    <p>المشترك: <b id="pName"></b></p><p>المتأخرات الحالية: <b id="pBalance"></b> ريال</p>
+    <input id="pAmount" class="input" type="number" min="1" placeholder="مبلغ القبض">
+    <input id="pNote" class="input" placeholder="ملاحظات (اختياري)">
+    <button class="btn btn-green" onclick="savePayment()">حفظ سند القبض</button>
+    <div id="pResult"></div>
+  </div>
 </div>
 
+<div id="sarf" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>💸 الصرفيات</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <section style="background:#f8fafc;border-radius:10px;padding:10px;margin-bottom:12px">
+    <h4 style="margin:4px 0 8px">إضافة نوع صرفية من اختيارك</h4>
+    <input id="newExpenseCategory" class="input" maxlength="60" placeholder="اكتب اسم النوع الذي تريده">
+    <button class="btn btn-green" onclick="addExpenseCategory()">+ إضافة النوع</button>
+    <div id="expenseCategoryList"></div>
+  </section>
+  <section style="background:#f8fafc;border-radius:10px;padding:10px">
+    <h4 style="margin:4px 0 8px">تسجيل صرفية جديدة</h4>
+    <label for="sarfCategory">نوع الصرفية</label><select id="sarfCategory" class="input"><option value="">— أضف نوع صرفية أولًا —</option></select>
+    <input id="sarfNote" class="input" maxlength="200" placeholder="بيان الصرف">
+    <input id="sarfAmount" class="input" type="number" min="0.01" step="any" placeholder="مبلغ الصرف بالريال">
+    <label for="sarfDate">تاريخ الصرف</label><input id="sarfDate" class="input" type="date">
+    <input id="sarfRecipient" class="input" maxlength="100" placeholder="اسم المستلم (اختياري)">
+    <textarea id="sarfNotes" class="input" rows="2" maxlength="500" placeholder="ملاحظات إضافية (اختياري)"></textarea>
+    <button class="btn" onclick="saveSarf()">حفظ الصرفية</button>
+  </section>
+  <section style="margin-top:14px">
+    <h4>سجل الصرفيات</h4>
+    <label for="sarfFilterCategory">تصفية حسب النوع</label><select id="sarfFilterCategory" class="input" onchange="renderSarf()"><option value="">كل الأنواع</option></select>
+    <div style="display:flex;gap:6px"><div style="flex:1;min-width:0"><label for="sarfFrom">من تاريخ</label><input id="sarfFrom" class="input" type="date" onchange="renderSarf()"></div><div style="flex:1;min-width:0"><label for="sarfTo">إلى تاريخ</label><input id="sarfTo" class="input" type="date" onchange="renderSarf()"></div></div>
+    <input id="sarfSearch" class="input" placeholder="بحث في البيان أو المستلم أو الملاحظات" oninput="renderSarf()">
+    <div id="sarfTotal" class="row"><span>إجمالي الصرفيات المعروضة</span><b>0 ريال</b></div>
+    <div id="sarfList"></div>
+    <h4>إجمالي كل نوع</h4><div id="expenseCategoryTotals"></div>
+  </section>
+</div>
+
+<div id="kashf" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>📊 كشف حساب المشترك</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <input id="kSearch" class="input" placeholder="ابحث بالاسم أو رقم العداد" oninput="kFilter()">
+  <label>ترتيب أسماء المشتركين في الكشف</label><select id="kSort" class="input" onchange="kFilter();if(document.getElementById('kDetails').dataset.all==='1')showAllStatements()"><option value="manual">الترتيب الحالي للمشتركين</option><option value="nameAsc">الاسم من أ إلى ي</option><option value="nameDesc">الاسم من ي إلى أ</option><option value="noAsc">رقم المحل تصاعديًا</option><option value="noDesc">رقم المحل تنازليًا</option><option value="balDesc">المتأخرات من الأعلى إلى الأقل</option><option value="balAsc">المتأخرات من الأقل إلى الأعلى</option></select>
+  <button class="btn" onclick="showAllStatements()">📊 كشف حساب جميع المشتركين</button>
+  <div id="kList"></div><div id="kDetails"></div>
+  <hr style="margin:18px 0;border:0;border-top:1px solid #e5e7eb">
+  <h3>📑 تقارير المشتركين</h3>
+  <div style="border:1px solid #dbeafe;border-radius:10px;padding:10px;margin:10px 0">
+    <h4>📊 كشف القراءات الصفرية</h4><label>ترتيب هذا الكشف</label><select id="zeroSort" class="input" onchange="renderZeroReport()"><option value="nameAsc">الاسم تصاعديًا</option><option value="nameDesc">الاسم تنازليًا</option><option value="shopAsc">رقم المحل تصاعديًا</option><option value="shopDesc">رقم المحل تنازليًا</option><option value="meterAsc">رقم العداد تصاعديًا</option><option value="meterDesc">رقم العداد تنازليًا</option></select>
+    <button class="btn" onclick="renderZeroReport()">عرض كشف القراءات الصفرية</button><div id="zeroResult"></div>
+  </div>
+  <div style="border:1px solid #dbeafe;border-radius:10px;padding:10px;margin:10px 0">
+    <h4>💸 كشف المبالغ المتأخرة</h4><label>من مبلغ (ريال)</label><input id="overdueFromAmount" class="input" type="number" min="0" step="any" placeholder="مثال: 1000"><label>ترتيب هذا الكشف</label><select id="overdueSort" class="input" onchange="renderOverdueReport()"><option value="nameAsc">الاسم تصاعديًا</option><option value="nameDesc">الاسم تنازليًا</option><option value="shopAsc">رقم المحل تصاعديًا</option><option value="shopDesc">رقم المحل تنازليًا</option><option value="meterAsc">رقم العداد تصاعديًا</option><option value="meterDesc">رقم العداد تنازليًا</option></select>
+    <button class="btn" onclick="renderOverdueReport()">عرض كشف المبالغ المتأخرة</button><div id="overdueResult"></div>
+  </div>
+  <div style="border:1px solid #dbeafe;border-radius:10px;padding:10px;margin:10px 0">
+    <h4>💰 كشف المشتركين المتبقي لهم</h4><label>ترتيب هذا الكشف</label><select id="creditSort" class="input" onchange="renderCreditReport()"><option value="nameAsc">الاسم تصاعديًا</option><option value="nameDesc">الاسم تنازليًا</option><option value="shopAsc">رقم المحل تصاعديًا</option><option value="shopDesc">رقم المحل تنازليًا</option><option value="meterAsc">رقم العداد تصاعديًا</option><option value="meterDesc">رقم العداد تنازليًا</option></select>
+    <button class="btn" onclick="renderCreditReport()">عرض كشف المبالغ المتبقية للمشتركين</button><div id="creditResult"></div>
+  </div>
+</div>
+
+<div id="cashboxes" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>🔐 إدارة صناديق المحصّلين — نسخة تجريبية</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div class="empty" style="text-align:right;background:#fff7ed;color:#9a3412">تنبيه تجربة: هذه النسخة تحفظ بيانات الصناديق على هذا الجهاز فقط. لم يتم تفعيل المزامنة الفعلية بين الهواتف بعد، ولا تستخدم كلمات سر حقيقية هنا.</div>
+  <div id="cashboxSession" class="empty" style="text-align:right">لا يوجد محصّل فاتحًا صندوقه الآن.</div>
+  <div id="cashboxManagerPanel">
+    <h4>➕ إنشاء صندوق محصّل</h4>
+    <input id="cbName" class="input" placeholder="اسم المحصّل">
+    <input id="cbUser" class="input" placeholder="اسم المستخدم (بالإنجليزية أو الأرقام)" autocomplete="off">
+    <input id="cbPass" class="input" type="password" placeholder="كلمة سر تجريبية" autocomplete="new-password">
+    <label style="display:block;margin:8px 0"><input id="cbCanPay" type="checkbox" checked> السماح بتسجيل سند قبض</label>
+    <label style="display:block;margin:8px 0"><input id="cbCanPrint" type="checkbox" checked> السماح بطباعة السند</label>
+    <label style="display:block;margin:8px 0"><input id="cbCanViewBalance" type="checkbox" checked> السماح بعرض متأخرات المشترك</label>
+    <label style="display:block;margin:8px 0"><input id="cbCanInvoice" type="checkbox"> السماح بإصدار الفواتير</label>
+    <button class="btn btn-green" onclick="createCashier()">حفظ صندوق المحصّل</button>
+    <h4>🔑 فتح صندوق محصّل للتجربة</h4>
+    <input id="cbLoginUser" class="input" placeholder="اسم المستخدم">
+    <input id="cbLoginPass" class="input" type="password" placeholder="كلمة السر">
+    <button class="btn" onclick="loginCashier()">فتح الصندوق</button>
+    <button class="btn" style="background:#64748b" onclick="logoutCashier()">إغلاق صندوق المحصّل</button>
+    <h4>📊 ملخص الصناديق</h4>
+    <div id="cashboxList"></div>
+  </div>
+</div>
+
+<div id="sync" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>☁️ ربط Supabase ومزامنة الهاتفين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <p>تم إدخال رابط مشروعك ومفتاح النشر. افحص الاتصال أولًا لقراءة أسماء الجداول المتاحة قبل تفعيل نقل البيانات.</p>
+  <label>رابط المشروع</label><input id="sbUrl" class="input" value="https://kqdszceqfuhrdgztygtn.supabase.co" autocomplete="off" dir="ltr">
+  <label>Publishable key</label><input id="sbKey" class="input" value="sb_publishable_2rkn8wje5jpYNgYbQVZ42Q_IooD05h0" autocomplete="off" dir="ltr">
+  <button class="btn" onclick="testSupabaseConnection()">فحص الاتصال والجداول</button>
+  <div id="sbStatus" class="empty" style="text-align:right;white-space:pre-wrap">لم يتم فحص الاتصال بعد.</div>
+  <p style="font-size:12px;color:#64748b">ملاحظة: هذا الفحص لا يغيّر بيانات قاعدة البيانات. لن نفعّل المزامنة الفعلية حتى نتأكد من أسماء الجداول والأعمدة وسياسات RLS.</p>
+</div>
+<div id="download" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>☁️ النسخ الاحتياطي</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <p>احفظ نسخة من بيانات نظام المياه في Google Drive، أو استعد آخر نسخة محفوظة. تبقى البيانات الأصلية على هذا الهاتف ما لم تختر الاستعادة.</p>
+  <button class="btn" onclick="backupData()">⬇️ تنزيل نسخة على الهاتف</button>
+  <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0">
+  <h4>ربط Google Drive</h4>
+  <label>OAuth Client ID (معرّف العميل فقط)</label>
+  <input id="driveClientId" class="input" dir="ltr" autocomplete="off" placeholder="xxxxx.apps.googleusercontent.com">
+  <p style="font-size:12px;color:#64748b;line-height:1.8">استخدم Client ID من بيانات اعتماد OAuth من نوع Web application. لا تدخل Client Secret ولا ترسله لأي شخص. يتطلب الربط فتح التطبيق من عنوان HTTPS مسموح به في إعدادات Google Cloud؛ قد لا يعمل مباشرة عند فتح ملف HTML محليًا.</p>
+  <button class="btn" onclick="connectGoogleDrive()">🔗 ربط حساب Google</button>
+  <button class="btn btn-green" onclick="backupToGoogleDrive()">☁️ حفظ نسخة احتياطية في Drive</button>
+  <button class="btn" style="background:#b45309" onclick="restoreFromGoogleDrive()">♻️ استعادة آخر نسخة من Drive</button>
+  <div id="driveStatus" class="empty" style="text-align:right;white-space:pre-wrap">لم يتم ربط Google Drive بعد.</div>
+</div>
+<div id="records" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>🗂️ آخر السجلات</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div style="background:#f8fafc;padding:10px;border-radius:10px;margin:8px 0">
+    <label for="recordsFrom">من تاريخ</label><input id="recordsFrom" class="input" type="date">
+    <label for="recordsTo">إلى تاريخ</label><input id="recordsTo" class="input" type="date">
+    <button class="btn" onclick="renderRecords()">🔎 بحث بالتاريخ</button>
+    <button class="btn" style="background:#e5e7eb;color:#111" onclick="resetRecordsDateFilter()">عرض جميع السجلات</button>
+  </div>
+  <div id="recordsList"></div>
+</div>
+<div id="adjustments" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>➖ تسوية / مبلغ بالسالب</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <input id="adjSearch" class="input" placeholder="ابحث عن المشترك" oninput="renderAdjustmentList()">
+  <div id="adjList"></div>
+  <div id="adjForm" style="display:none;background:#f8fafc;padding:12px;border-radius:10px">
+    <h4 id="adjName"></h4><label>المبلغ (اكتب سالبًا للخصم من المديونية)</label><input id="adjAmount" class="input" type="number" step="0.01" placeholder="مثال: -1000 أو 500">
+    <input id="adjReason" class="input" placeholder="سبب التسوية (إلزامي)">
+    <button class="btn btn-green" onclick="saveAdjustment()">حفظ التسوية</button>
+  </div><div id="adjHistory"></div>
+</div>
+<div id="bulk" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>📨 رسائل جماعية للمشتركين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <p>اختر قناة الإرسال ونص الرسالة. بسبب قيود واتساب والمتصفح، تُفتح محادثة كل مشترك على حدة ولا يمكن لصفحة HTML إرسال الرسائل بصمت إلى الجميع.</p>
+  <label>قناة الإرسال</label><select id="bulkChannel" class="input"><option value="wa">واتساب</option><option value="sms">SMS</option></select>
+  <textarea id="bulkText" class="input" rows="4" placeholder="اكتب الرسالة. يمكنك استخدام {الاسم} و{المتأخرات}">تنبيه من إدارة المياه: رصيد حسابكم الحالي {المتأخرات} ريال. شكرًا لكم.</textarea>
+  <div id="bulkProgress" class="empty">لم يبدأ الإرسال بعد.</div>
+  <button class="btn btn-green" onclick="startBulkMessages()">بدء الإرسال للمشتركين</button><button class="btn" onclick="nextBulkMessage()">فتح رسالة المشترك التالي</button><button class="btn" style="background:#64748b" onclick="stopBulkMessages()">إيقاف</button>
+</div>
+<div id="reports" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>📈 تقارير الإيرادات والمصروفات</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <label>من تاريخ</label><input id="reportFrom" class="input" type="date">
+  <label>إلى تاريخ</label><input id="reportTo" class="input" type="date">
+  <button class="btn" onclick="renderReports()">عرض التقرير</button><div id="reportResult"></div>
+</div>
+<div id="settings" class="view">
+  <h3>⚙️ الإعدادات</h3>
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:12px">
+    <h4 style="margin:0 0 8px">🖼️ تغيير شعار التطبيق</h4>
+    <p style="font-size:13px;color:#64748b;margin:0 0 8px">اختر صورة من هاتفك لتظهر بدل رمز قطرة الماء في أعلى التطبيق. تُحفظ الصورة على هذا الجهاز.</p>
+    <input id="logoFile" class="input" type="file" accept="image/*" onchange="previewLogo(event)">
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px"><img id="logoPreview" alt="معاينة الشعار" style="display:none;width:68px;height:68px;object-fit:contain;border:1px solid #ddd;border-radius:10px;background:#fff;padding:4px"><span id="logoPreviewText" style="font-size:13px;color:#64748b">لم يتم اختيار شعار بعد</span></div>
+    <button class="btn btn-green" onclick="saveLogo()">💾 حفظ الشعار</button>
+    <button class="btn" style="background:#64748b" onclick="removeLogo()">↩️ استعادة الشعار الافتراضي</button>
+  </div>
+  <label>اسم التطبيق داخل الواجهة</label><input id="appName" class="input" type="text" maxlength="60" value="نظام المياه" placeholder="اكتب اسم التطبيق"><p style="font-size:12px;color:#64748b">يظهر الاسم الذي تختاره في أعلى التطبيق وعلى عنوان الصفحة. هذا لا يغيّر الاسم تحت أيقونة الهاتف.</p>
+  <label>سعر الوحدة (ريال)</label><input id="unitPrice" class="input" type="number" min="0" value="600">
+  <label style="display:block;margin-top:10px"><input id="autoMessage" type="checkbox"> بعد حفظ الفاتورة أو سند القبض، افتح خيارات الإرسال تلقائيًا</label>
+  <p style="font-size:12px;color:#64748b">تنبيه: هذا الخيار يفتح خيارات الإرسال؛ لا تستطيع صفحة HTML إرسال واتساب وSMS بصمت أو ضمان وصولهما. الإرسال التلقائي الكامل يحتاج تكاملًا رسميًا مع WhatsApp Business ومزود SMS أو تطبيق أندرويد بصلاحيات مناسبة.</p>
+  <button class="btn" onclick="saveSettings()">حفظ الإعدادات</button>
+  <button class="btn" style="background:#e5e7eb;color:#111" onclick="goHome()">رجوع</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<div id="pdfImportModal" style="display:none;position:fixed;inset:0;background:#0009;z-index:10000;overflow:auto;padding:14px"><div style="max-width:720px;margin:20px auto;background:white;border-radius:14px;padding:16px"><h3>استيراد المشتركين من PDF</h3><p style="font-size:13px;color:#475569;line-height:1.8">راجع النص المستخرج من ملف النظام الآخر. لأن تنسيق ملفات PDF يختلف بين الأنظمة، رتّب كل مشترك في سطر بهذا الشكل باستخدام الرمز | للفصل: <b>رقم المحل | اسم المشترك | المنطقة | الهاتف | القراءة السابقة | المتأخرات</b>. يمكن حذف عناوين الأعمدة والأسطر غير المطلوبة. الملفات المصوّرة التي لا تحتوي على نص قابل للتحديد قد لا تُقرأ.</p><input id="pdfImportFileName" class="input" readonly placeholder="اسم الملف"><textarea id="pdfImportText" class="input" rows="12" placeholder="سيظهر النص المستخرج هنا؛ راجعه ورتّبه قبل الاستيراد" style="white-space:pre;direction:auto"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-green" onclick="commitPDFImport()">استيراد البيانات الظاهرة</button><button class="btn" style="background:#64748b" onclick="closePDFImport()">إلغاء</button></div><div id="pdfImportStatus" style="font-size:13px;margin-top:8px"></div></div></div>
 <script>
-var subs=[]; var invoices=[];
-try{ subs=JSON.parse(localStorage.getItem('water_v5_name_meter')||'[]'); invoices=JSON.parse(localStorage.getItem('water_invoices')||'[]'); }catch(e){ subs=[]; invoices=[]; }
-var unitPrice=parseInt(localStorage.getItem('unit_price')||'0')||0;
-var html5QrcodeScanner=null; var currentFound=null;
+const STORE_KEY='ibda3_water_billing_v1';
+const LOGO_KEY='ibda3_water_billing_logo_v1';
+let pendingLogoData=null;
+let data={moshtarakin:[],invoices:[],payments:[],expenses:[],expenseCategories:[],adjustments:[],cashiers:[],unitPrice:600,appName:"نظام المياه"};
+let activeCashier=null;
+let bulkQueue=[],bulkIndex=0;
+let sel=null, selPay=null, lastInvoice=null;
+let lastSavedInvoice=null,lastSavedPayment=null;
+let pendingMeterPhotoData=null,pendingMeterPhotoPromise=Promise.resolve();
 
-function save(){
-  localStorage.setItem('water_v5_name_meter',JSON.stringify(subs));
-  localStorage.setItem('water_invoices',JSON.stringify(invoices));
-  var dc=document.getElementById('dc'); if(dc) dc.innerText=subs.length+' مشترك';
-  updatePriceDisplay();
-}
-function saveSettings(){
-  var up=document.getElementById('unitPrice');
-  if(up){ var val=parseInt(up.value)||0; localStorage.setItem('unit_price',val); unitPrice=val; }
-  updatePriceDisplay(); updatePreview();
-  alert('تم حفظ السعر: '+unitPrice+' ريال');
-}
-function setPrice(p){ document.getElementById('unitPrice').value=p; saveSettings(); }
-function loadSettingsPage(){ document.getElementById('unitPrice').value=unitPrice; updatePreview(); }
-function updatePriceDisplay(){
-  var el1=document.getElementById('currentPriceDisplay');
-  var el2=document.getElementById('pricePerUnit');
-  var badge=document.getElementById('priceBadge');
-  if(el1) el1.innerText=unitPrice;
-  if(el2) el2.innerText=unitPrice;
-  if(badge) badge.innerText='السعر: '+unitPrice+' ريال';
-}
-function updatePreview(){
-  var p=parseInt(document.getElementById('unitPrice').value)||0;
-  document.getElementById('previewPrice').innerText=p;
-  document.getElementById('previewTotal').innerText=(10*p)+' ريال';
-}
-function makeBarcode(no, name){ return no + '|' + name; }
-function parseBarcode(text){
-  if(text.indexOf('|')>-1){ var parts=text.split('|'); return { no: parts[0].trim(), name: parts.slice(1).join('|').trim() }; }
-  return { no: text.trim(), name: '' };
-}
-function addM(){ 
-  document.getElementById('n_name').value='';
-  document.getElementById('n_no').value='';
-  document.getElementById('n_phone').value='';
-  document.getElementById('prevBox').innerText='---';
-  document.getElementById('prevName').innerText='';
-  document.getElementById('addModal').style.display='flex'; 
-}
-function saveM(){
-  var name=document.getElementById('n_name').value.trim();
-  var meter=document.getElementById('n_no').value.trim();
-  if(!name){ alert('اكتب اسم المشترك'); return; }
-  if(!meter){ alert('اكتب رقم العداد'); return; }
-  for(var i=0;i<subs.length;i++){ if(subs[i].no==meter){ alert('رقم العداد موجود: '+meter); return; } }
-  var barcode=makeBarcode(meter, name);
-  subs.push({id:Date.now(), name:name, no:meter, barcode:barcode, phone:document.getElementById('n_phone').value.trim(), lastReading:0});
-  save(); document.getElementById('addModal').style.display='none'; render();
-}
-function render(){
-  var q=document.getElementById('sSearch').value.toLowerCase();
-  var list=document.getElementById('list');
-  var empty=document.getElementById('empty');
-  list.innerHTML='';
-  var f=[];
-  for(var i=0;i<subs.length;i++){ var s=subs[i]; if(!q|| (s.name+' '+s.no+' '+s.phone).toLowerCase().indexOf(q)>-1) f.push(s); }
-  if(f.length==0){ empty.style.display='block'; }else{ empty.style.display='none'; }
-  for(var i=0;i<f.length;i++){
-    var s=f[i];
-    var d=document.createElement('div');
-    d.style="background:#fff;border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center";
-    d.innerHTML='<div><b style="font-size:16px">'+s.name+'</b><br><span style="background:#e0f2fe;color:#0369a1;padding:3px 8px;border-radius:12px;font-weight:900">عداد: '+s.no+'</span></div><div><button onclick="showBarcode('+s.id+')" style="background:#e0f2fe;border:none;padding:8px 10px;border-radius:8px;font-weight:700">▦ باركود</button> <button onclick="del('+s.id+')" style="background:#ffe4e6;border:none;padding:6px 8px;border-radius:8px">حذف</button></div>';
-    list.appendChild(d);
-  }
-}
-function showBarcode(id){
-  var s=null; for(var i=0;i<subs.length;i++) if(subs[i].id==id) s=subs[i];
-  if(!s) return;
-  document.getElementById('bcName').innerText=s.name;
-  document.getElementById('bcNo').innerText='رقم العداد: '+s.no;
-  document.getElementById('bcBig').innerText=s.barcode||makeBarcode(s.no, s.name);
-  document.getElementById('bcUnderText').innerText='رقم العداد: ' + s.no;
-  document.getElementById('bcFullText').innerText='الباركود يحمل: '+(s.barcode||'')+' - عند المسح يظهر بيانات كاملة';
-  document.getElementById('barcodeModal').style.display='flex';
-}
-// ===== إصلاح الطباعة: يظهر تحت الباركود رقم العداد فقط =====
-function printBarcode(){
-  var code=document.getElementById('bcBig').innerText;
-  var name=document.getElementById('bcName').innerText;
-  var meterNo=code.split('|')[0]; // رقم العداد فقط
-  var w=window.open('');
-  w.document.write(
-    '<html dir="rtl"><head><meta charset="utf-8"><style>'+
-    'body{text-align:center;font-family:Tahoma;padding:30px}'+
-    '.name{font-size:20px;color:#666;margin-bottom:8px}'+
-    '.c{font-size:36px;font-weight:900;border:3px solid #000;padding:20px 30px;display:inline-block;letter-spacing:2px;margin:20px;background:#fff;word-break:break-all;max-width:90%}'+
-    '.under{font-size:22px;font-weight:800;color:#000;margin-top:10px}'+
-    '.note{font-size:11px;color:#999;margin-top:12px}'+
-    '</style></head><body>'+
-    '<div class="name">'+name+'</div>'+
-    '<div class="c">'+code+'</div>'+
-    '<div class="under">رقم العداد: '+meterNo+'</div>'+
-    '<div class="note">عند تصوير هذا الباركود سيظهر اسم المشترك وبياناته كاملة</div>'+
-    '<br><br><button onclick="window.print()" style="padding:14px 28px;font-size:16px">🖨️ طباعة</button>'+
-    '<script>setTimeout(()=>window.print(),500)<\/script></body></html>'
-  );
-  w.document.close();
-}
-function del(id){ if(confirm('حذف؟')){ subs=subs.filter(function(x){return x.id!=id}); save(); render(); } }
-function checkSubs(){ document.getElementById('noSubs').style.display=subs.length?'none':'block'; }
 
-function startScan(){
-  var reader=document.getElementById('reader');
-  var btn=document.getElementById('scanBtn');
-  var stop=document.getElementById('stopBtn');
-  var status=document.getElementById('camStatus');
-  if(typeof Html5Qrcode==='undefined'){
-    alert('الماسح يحتاج إنترنت أول مرة.');
-    document.getElementById('manualSearch').focus();
-    return;
-  }
-  reader.style.display='block'; stop.style.display='block'; btn.style.display='none';
-  status.innerText='جاري فتح الكاميرا...';
-  html5QrcodeScanner=new Html5Qrcode("reader");
-  html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 300, height: 150 } }, onScanSuccess, function(){}).then(function(){
-    status.innerText='✅ الكاميرا تعمل - وجهها للباركود';
-  }).catch(function(err){
-    status.innerText='❌ فشل: '+err;
-    alert('فشل الكاميرا: '+err);
-    stopScan();
+const SB_URL_KEY='ibda3_supabase_url';
+const SB_PUB_KEY='ibda3_supabase_publishable_key';
+function normalizeSbUrl(v){return String(v||'').trim().replace(/\/+$/,'').replace(/\/rest\/v1$/i,'');}
+function saveSbConfig(){const u=normalizeSbUrl(document.getElementById('sbUrl').value);const k=document.getElementById('sbKey').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(u)){throw new Error('رابط المشروع غير صحيح. استخدم رابط Project URL دون /rest/v1/.');}if(!k.startsWith('sb_publishable_')&&!k.startsWith('eyJ')){throw new Error('المفتاح ليس Publishable/anon key معروفًا.');}localStorage.setItem(SB_URL_KEY,u);localStorage.setItem(SB_PUB_KEY,k);return {url:u,key:k};}
+async function testSupabaseConnection(){
+ const box=document.getElementById('sbStatus');box.textContent='جارٍ الاتصال بمشروع Supabase وفحص الجداول...';
+ try{
+  const cfg=saveSbConfig();
+  const res=await fetch(cfg.url+'/rest/v1/',{method:'GET',headers:{'apikey':cfg.key,'Authorization':'Bearer '+cfg.key,'Accept':'application/openapi+json'}});
+  const body=await res.text();let spec=null;try{spec=JSON.parse(body)}catch{}
+  if(!res.ok){let detail='';try{const e=JSON.parse(body);detail=e.message||e.hint||e.details||body.slice(0,250)}catch{detail=body.slice(0,250)}throw new Error('رفض الاتصال ('+res.status+'): '+detail);}
+  const paths=spec&&spec.paths?Object.keys(spec.paths):[];
+  const tables=[...new Set(paths.map(p=>p.split('/')[1]).filter(x=>x&&!x.startsWith('rpc/')))].sort();
+  box.textContent='نجح الاتصال بمشروع Supabase.\n'+(tables.length?'الجداول/المسارات التي ظهرت للمفتاح الحالي:\n• '+tables.join('\n• '):'تم الاتصال، لكن لم تظهر أسماء جداول في رد الخدمة.');
+  if(tables.length)box.textContent+='\n\nالخطوة التالية: نطابق هذه الجداول مع بيانات التطبيق قبل تشغيل المزامنة.';
+ }catch(e){box.textContent='تعذر فحص الاتصال.\n'+(e&&e.message?e.message:String(e))+'\n\nتأكد من رابط المشروع والمفتاح، ومن اتصال الإنترنت.';}
+}
+(function loadSbConfig(){const u=localStorage.getItem(SB_URL_KEY),k=localStorage.getItem(SB_PUB_KEY);if(u&&document.getElementById('sbUrl'))document.getElementById('sbUrl').value=u;if(k&&document.getElementById('sbKey'))document.getElementById('sbKey').value=k;})();
+
+function loadData(){
+  try{
+    const saved=localStorage.getItem(STORE_KEY);
+    if(saved){const parsed=JSON.parse(saved);data={...data,...parsed};}
+  }catch(e){console.warn('تعذر تحميل البيانات المحفوظة',e);}
+  // بدء النسخة بقاعدة بيانات فارغة إذا لم توجد بيانات سابقة محفوظة.
+  data.moshtarakin=Array.isArray(data.moshtarakin)?data.moshtarakin:[];
+  data.invoices=Array.isArray(data.invoices)?data.invoices:[];
+  data.payments=Array.isArray(data.payments)?data.payments:[];
+  data.expenses=Array.isArray(data.expenses)?data.expenses:[];
+  data.expenseCategories=Array.isArray(data.expenseCategories)?data.expenseCategories:[];
+  data.expenses.forEach((x,i)=>{if(!x.id)x.id='EXP-LEGACY-'+i+'-'+String(x.date||'').replace(/\D/g,'');});
+  data.adjustments=Array.isArray(data.adjustments)?data.adjustments:[];
+  data.cashiers=Array.isArray(data.cashiers)?data.cashiers:[];
+  data.invoices.forEach((x,i)=>{if(!x.id)x.id='INV-LEGACY-'+i+'-'+String(x.date||'').replace(/\D/g,'');});
+}
+function persist(){localStorage.setItem(STORE_KEY,JSON.stringify(data));updateCounts();}
+function updateCounts(){document.getElementById('homeCount').textContent=data.moshtarakin.length+' مشترك';}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function money(n){return (Number(n)||0).toLocaleString('en-US');}
+function balance(m){const bills=data.invoices.filter(x=>x.no===m.no).reduce((s,x)=>s+(Number(x.amount)||0),0);const paid=data.payments.filter(x=>x.no===m.no).reduce((s,x)=>s+(Number(x.amount)||0),0);const adj=data.adjustments.filter(x=>x.no===m.no).reduce((s,x)=>s+(Number(x.amount)||0),0);return (Number(m.openingBalance)||0)+bills-paid+adj;}
+function openV(id){
+ document.getElementById('home').style.display='none';
+ document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+ document.getElementById(id).style.display='block';
+ if(id==='moshtarakin')filterMos();
+ if(id==='fawater')fFilter();
+ if(id==='tahseel')pFilter();
+ if(id==='kashf')kFilter();
+ if(id==='sarf'){prepareSarfDate();renderSarf();}
+ if(id==='settings'){document.getElementById('unitPrice').value=data.unitPrice;document.getElementById('autoMessage').checked=!!data.autoMessage;refreshLogoPreview();}
+ if(id==='records')renderRecords();
+ if(id==='adjustments')renderAdjustmentList();
+ if(id==='reports')renderReports();
+}
+function goHome(){document.querySelectorAll('.view').forEach(v=>v.style.display='none');document.getElementById('home').style.display='block';}
+function renderMos(list){
+ const el=document.getElementById('mosList');el.innerHTML='';
+ if(!list.length){el.innerHTML='<div class="empty">لا يوجد مشتركون حتى الآن.<br>اضغط «+ إضافة» لإضافة أول مشترك.</div>';}
+ list.slice(0,100).forEach(m=>{
+  const d=document.createElement('div');d.className='row';
+  d.innerHTML=`<div style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" class="barcode-select" data-sub-no="${esc(m.no)}" aria-label="تحديد باركود ${esc(m.name)}" onchange="toggleBarcodeSelection('${esc(m.no)}',this.checked)" style="width:20px;height:20px;margin-top:4px"><div><b>${esc(m.no)} - ${esc(m.name)}</b><br><small>${esc(m.area||'')} ${esc(m.phone||'')} | القراءة السابقة: ${esc(m.prev||0)}</small></div></div><div><span class="badge">${money(balance(m))} ر.ي</span><br><button class="small-btn" style="background:#ede9fe" onclick="showQR('${esc(m.no)}')">▦ الباركود</button> <button class="small-btn" onclick="editMos('${esc(m.no)}')">✏️ تعديل</button> <button class="small-btn" onclick="delMos('${esc(m.no)}')">🗑️</button></div>`;
+  el.appendChild(d);
+ });
+ document.getElementById('mosCount').textContent=`عرض ${Math.min(100,list.length)} من ${list.length} مشترك`;
+ updateCounts();
+}
+function filterMos(){const q=document.getElementById('searchMos').value.trim().toLowerCase();renderMos(data.moshtarakin.filter(x=>String(x.name).toLowerCase().includes(q)||String(x.no).toLowerCase().includes(q)||String(x.phone||'').toLowerCase().includes(q)));}
+function showAdd(){document.getElementById('addForm').style.display='block';}
+function hideAdd(){document.getElementById('addForm').style.display='none';}
+function addMos(){
+ const name=document.getElementById('newName').value.trim(),no=document.getElementById('newNo').value.trim();
+ if(!name||!no){alert('اكتب اسم المشترك ورقم العداد/المحل.');return;}
+ if(data.moshtarakin.some(x=>x.no===no)){alert('رقم العداد/المحل موجود بالفعل.');return;}
+ data.moshtarakin.unshift({no,name,area:document.getElementById('newArea').value.trim(),phone:document.getElementById('newPhone').value.trim(),prev:Number(document.getElementById('newPrev').value)||0,openingBalance:0});
+ ['newName','newNo','newArea','newPhone'].forEach(id=>document.getElementById(id).value='');document.getElementById('newPrev').value='0';
+ persist();hideAdd();filterMos();fFilter();pFilter();alert('تمت إضافة المشترك وحفظ بياناته على هذا الجهاز. ✅');
+}
+function editMos(no){
+ const m=data.moshtarakin.find(x=>x.no===no);if(!m)return;
+ const name=prompt('اسم المشترك',m.name);if(name===null||!name.trim())return;
+ const newNo=prompt('رقم العداد/المحل',m.no);if(newNo===null||!newNo.trim())return;
+ if(newNo.trim()!==m.no&&data.moshtarakin.some(x=>x.no===newNo.trim())){alert('هذا الرقم مستخدم لمشترك آخر.');return;}
+ const area=prompt('المنطقة',m.area||'');if(area===null)return;
+ const phone=prompt('رقم الهاتف',m.phone||'');if(phone===null)return;
+ const oldNo=m.no;m.name=name.trim();m.no=newNo.trim();m.area=area.trim();m.phone=phone.trim();
+ [...data.invoices,...data.payments].forEach(x=>{if(x.no===oldNo)x.no=m.no;});
+ persist();filterMos();fFilter();pFilter();kFilter();
+}
+function delMos(no){if(!confirm('هل تريد حذف المشترك؟ ستبقى سجلاته المالية محفوظة في التطبيق.'))return;data.moshtarakin=data.moshtarakin.filter(x=>x.no!==no);persist();filterMos();fFilter();pFilter();kFilter();}
+let barcodeStream=null,barcodeTimer=null;
+function openMeterCamera(){const input=document.getElementById('meterPhoto');input.setAttribute('capture','environment');input.click();}
+function showQR(no){const m=data.moshtarakin.find(x=>String(x.no)===String(no));if(!m)return;document.getElementById('qrSubscriberName').textContent=m.name;document.getElementById('qrSubscriberNo').textContent='رقم المشترك: '+m.no;document.getElementById('qrCanvas').innerHTML='';document.getElementById('qrModal').style.display='flex';if(window.QRCode){new QRCode(document.getElementById('qrCanvas'),{text:'WATER-SUB:'+m.no,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});}else{document.getElementById('qrCanvas').textContent='تعذر تحميل مولّد الباركود. تحقق من الإنترنت.';}}
+function closeQR(){document.getElementById('qrModal').style.display='none';}
+function startBarcodeScan(){
+ const panel=document.getElementById('scanPanel'),status=document.getElementById('scanStatus'),input=document.getElementById('barcodePhoto');
+ panel.style.display='block';
+ if(!('BarcodeDetector' in window)){status.textContent='قارئ الباركود غير مدعوم في هذا المتصفح. استخدم البحث بالاسم أو رقم العداد، أو افتح الملف عبر HTTPS/Chrome حديث.';return;}
+ status.textContent='افتح الكاميرا وصوّر باركود المشترك بوضوح.';
+ input.value='';input.setAttribute('capture','environment');input.click();
+}
+async function readBarcodePhoto(event){
+ const file=event.target.files&&event.target.files[0];if(!file)return;
+ const status=document.getElementById('scanStatus');status.textContent='جارٍ تحليل صورة الباركود...';
+ try{
+  const detector=new BarcodeDetector({formats:['qr_code']});
+  let source;
+  if('createImageBitmap' in window) source=await createImageBitmap(file);
+  else {source=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=URL.createObjectURL(file);});}
+  const codes=await detector.detect(source);if(source.close)source.close();
+  if(!codes.length){status.textContent='لم يظهر باركود واضح في الصورة. أعد التصوير من مسافة أقرب مع إضاءة جيدة.';return;}
+  let value=String(codes[0].rawValue||'').trim();if(value.startsWith('WATER-SUB:'))value=value.slice(10);
+  const m=data.moshtarakin.find(x=>String(x.no).trim()===value);
+  if(m){document.getElementById('fSearch').value=m.no;fFilter();selF(m.no);status.textContent='تم العثور على المشترك: '+m.name;}
+  else status.textContent='تمت قراءة الباركود، لكن لا يوجد مشترك مطابق للرقم: '+value;
+ }catch(e){status.textContent='تعذر تحليل الصورة. جرّب Chrome حديثًا واسمح بالوصول للكاميرا، أو ابحث بالاسم/رقم العداد.';}
+}
+function stopBarcodeScan(){const input=document.getElementById('barcodePhoto');if(input)input.value='';}
+function fFilter(){
+ const q=(document.getElementById('fSearch').value||'').trim().toLowerCase();
+ const list=data.moshtarakin.filter(x=>x.name.toLowerCase().includes(q)||x.no.toLowerCase().includes(q)).slice(0,100);
+ const el=document.getElementById('fList');
+ el.innerHTML=list.length?list.map(x=>`<div class="row" onclick="selF('${esc(x.no)}')" style="cursor:pointer"><span>🏪 ${esc(x.no)} - ${esc(x.name)}</span><span>سابق: ${money(x.prev)}</span></div>`).join(''):'<div class="empty">لا يوجد مشتركون. أضف المشتركين أولًا من خانة المشتركين.</div>';
+}
+function selF(no){sel=data.moshtarakin.find(x=>x.no===no);if(!sel)return;document.getElementById('fForm').style.display='block';document.getElementById('fName').textContent=sel.name;document.getElementById('fNo').textContent=sel.no;document.getElementById('fPrev').textContent=sel.prev||0;document.getElementById('fCurr').value='';document.getElementById('fRes').textContent='';document.getElementById('meterPhoto').value='';document.getElementById('meterPreview').removeAttribute('src');document.getElementById('meterPreview').style.display='none';document.getElementById('ocrStatus').textContent='يمكنك تصوير العداد الآن أو إدخال القراءة يدويًا.';pendingMeterPhotoData=null;pendingMeterPhotoPromise=Promise.resolve();lastInvoice=null;}
+function calcF(){
+ if(!sel)return;const raw=document.getElementById('fCurr').value;if(raw===''){alert('أدخل القراءة الحالية.');return;}
+ const cur=Number(raw),prev=Number(sel.prev)||0;if(cur<prev){alert('القراءة الحالية لا يمكن أن تكون أقل من القراءة السابقة.');return;}
+ const diff=cur-prev;lastInvoice={no:sel.no,name:sel.name,prev,current:cur,units:diff,price:Number(data.unitPrice ?? 600),amount:diff*Number(data.unitPrice ?? 600),date:new Date().toISOString()};
+ document.getElementById('fRes').innerHTML=`الاستهلاك: <b>${diff}</b> وحدة × ${money(lastInvoice.price)} = <b style="color:green">${money(lastInvoice.amount)} ريال</b>`;
+}
+async function saveInvoice(){
+ if(!sel){alert('اختر مشتركًا أولًا.');return;}if(!lastInvoice)calcF();if(!lastInvoice)return;
+ await pendingMeterPhotoPromise;
+ if(pendingMeterPhotoData)lastInvoice.meterPhoto=pendingMeterPhotoData;
+ lastInvoice.id=lastInvoice.id||('INV-'+Date.now());data.invoices.unshift(lastInvoice);sel.prev=lastInvoice.current;persist();document.getElementById('fPrev').textContent=sel.prev;document.getElementById('fRes').innerHTML+=`<p>تم حفظ الفاتورة وتحديث القراءة السابقة. المتأخرات الآن: <b>${money(balance(sel))} ريال</b></p>`;
+ lastSavedInvoice={...data.invoices[0]};lastInvoice=null;pendingMeterPhotoData=null;pendingMeterPhotoPromise=Promise.resolve();filterMos();pFilter();kFilter();
+ document.getElementById('fRes').innerHTML+=`<div class="toolbar"><button class="btn" onclick="sendInvoiceWhatsApp()">إرسال الفاتورة عبر واتساب</button><button class="btn" style="background:#0f766e" onclick="sendInvoiceSMS()">إرسال SMS</button></div>`;
+ alert('تم حفظ الفاتورة وتحديث القراءة السابقة.');if(data.autoMessage)showInvoiceSendOptions();}
+function pFilter(){
+ const q=(document.getElementById('pSearch').value||'').trim().toLowerCase();
+ const list=data.moshtarakin.filter(x=>x.name.toLowerCase().includes(q)||x.no.toLowerCase().includes(q)).slice(0,100);
+ document.getElementById('pList').innerHTML=list.length?list.map(x=>`<div class="row" onclick="selPayment('${esc(x.no)}')" style="cursor:pointer"><span>${esc(x.no)} - ${esc(x.name)}</span><b>${money(balance(x))} ر.ي</b></div>`).join(''):'<div class="empty">لا يوجد مشتركون. أضف المشتركين أولًا.</div>';
+}
+function selPayment(no){selPay=data.moshtarakin.find(x=>x.no===no);if(!selPay)return;document.getElementById('pForm').style.display='block';document.getElementById('pName').textContent=selPay.name;document.getElementById('pBalance').textContent=money(balance(selPay));document.getElementById('pAmount').value='';document.getElementById('pResult').textContent='';}
+function savePayment(){
+  const amount=Number(document.getElementById('pAmount').value);
+  if(!selPay||!Number.isFinite(amount)||amount<=0){alert('اختر مشتركًا وأدخل مبلغًا صحيحًا.');return;}
+  const payment={no:selPay.no,name:selPay.name,amount,note:document.getElementById('pNote').value.trim(),date:new Date().toISOString(),cashierId:activeCashier?activeCashier.id:'manager',cashierName:activeCashier?activeCashier.name:'المدير'};
+  data.payments.unshift(payment);
+  persist();
+  const remaining=balance(selPay);
+  lastSavedPayment={...payment,remaining};
+  document.getElementById('pBalance').textContent=money(remaining);
+  document.getElementById('pResult').innerHTML=`<div class="empty" id="printArea">سند قبض<br>المشترك: ${esc(payment.name)}<br>رقم العداد/المحل: ${esc(payment.no)}<br>المبلغ المقبوض: ${money(amount)} ريال<br>المتبقي: ${money(remaining)} ريال<br>المحصّل: ${esc(payment.cashierName||'المدير')}<br>التاريخ: ${new Date(payment.date).toLocaleString('ar')}</div>
+  <button class="btn" onclick="window.print()">🖨️ طباعة سند القبض</button>
+  <button class="btn" style="background:#16a34a" onclick="sendPaymentWhatsApp()">📱 إرسال سند القبض عبر واتساب</button>
+  <button class="btn" style="background:#0f766e" onclick="sendPaymentSMS()">✉️ إرسال سند القبض برسالة SMS</button>`;
+  document.getElementById('pNote').value='';
+  filterMos();pFilter();kFilter();
+  alert('تم حفظ سند القبض. يمكنك الآن اختيار واتساب أو SMS من الأزرار الظاهرة أسفل السند.');
+  if(data.autoMessage)showPaymentSendOptions();
+}
+function sortedSubscribers(list){
+ const mode=document.getElementById('kSort')?.value||'manual';
+ const arr=[...list];
+ if(mode==='nameAsc')arr.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ar'));
+ else if(mode==='nameDesc')arr.sort((a,b)=>String(b.name||'').localeCompare(String(a.name||''),'ar'));
+ else if(mode==='noAsc')arr.sort((a,b)=>String(a.no||'').localeCompare(String(b.no||''),'ar',{numeric:true}));
+ else if(mode==='noDesc')arr.sort((a,b)=>String(b.no||'').localeCompare(String(a.no||''),'ar',{numeric:true}));
+ else if(mode==='balDesc')arr.sort((a,b)=>balance(b)-balance(a));
+ else if(mode==='balAsc')arr.sort((a,b)=>balance(a)-balance(b));
+ return arr;
+}
+function kFilter(){
+ const q=(document.getElementById('kSearch').value||'').trim().toLowerCase();
+ const list=sortedSubscribers(data.moshtarakin.filter(x=>String(x.name||'').toLowerCase().includes(q)||String(x.no||'').toLowerCase().includes(q))).slice(0,100);
+ document.getElementById('kList').innerHTML=list.length?list.map(x=>`<div class="row" onclick="showStatement('${esc(x.no)}')" style="cursor:pointer"><span>${esc(x.no)} - ${esc(x.name)}</span><b>${money(balance(x))} ر.ي</b></div>`).join(''):'<div class="empty">لا يوجد مشتركون.</div>';
+}
+function showStatement(no){
+ const m=data.moshtarakin.find(x=>x.no===no);if(!m)return;
+ const bills=data.invoices.filter(x=>x.no===no),pays=data.payments.filter(x=>x.no===no);
+ let rows=[...bills.map(x=>({date:x.date,type:'فاتورة',amount:x.amount})),...pays.map(x=>({date:x.date,type:'سند قبض',amount:-x.amount})),...data.adjustments.filter(x=>x.no===no).map(x=>({date:x.date,type:'تسوية: '+x.reason,amount:x.amount}))].sort((a,b)=>new Date(a.date)-new Date(b.date));
+ document.getElementById('kDetails').innerHTML=`<h4>كشف حساب: ${esc(m.name)} - رقم ${esc(m.no)}</h4><p>المتأخرات الحالية: <b>${money(balance(m))} ريال</b></p>`+(rows.length?rows.map(x=>`<div class="row"><span>${esc(x.type)}<br><small>${new Date(x.date).toLocaleDateString('ar')}</small></span><b>${x.amount<0?'-':''}${money(Math.abs(x.amount))} ريال</b></div>`).join(''):'<div class="empty">لا توجد حركات مالية لهذا المشترك.</div>');
+}
+function showAllStatements(){
+ const rows=sortedSubscribers(data.moshtarakin).map(m=>({no:m.no,name:m.name,phone:m.phone||'',bills:data.invoices.filter(x=>x.no===m.no).reduce((s,x)=>s+(Number(x.amount)||0),0),paid:data.payments.filter(x=>x.no===m.no).reduce((s,x)=>s+(Number(x.amount)||0),0),adjustments:data.adjustments.filter(x=>x.no===m.no).reduce((s,x)=>s+(Number(x.amount)||0),0),balance:balance(m)}));
+ const total=rows.reduce((s,x)=>s+x.balance,0); const details=document.getElementById('kDetails');details.dataset.all='1';
+ details.innerHTML='<h4>كشف حساب جميع المشتركين</h4><p>عدد المشتركين: <b>'+rows.length+'</b> | إجمالي الأرصدة المستحقة: <b>'+money(total)+' ريال</b></p><button class="btn" onclick="printAllStatements()">🖨️ طباعة الكشف</button><button class="btn" style="background:#0f766e" onclick="exportAllStatements()">📥 تصدير CSV</button><button class="btn" style="background:#7c3aed" onclick="exportAllStatementsPDF()">📄 تصدير كشف الحساب PDF</button>'+ (rows.length?rows.map(x=>`<div class="row"><span><b>${esc(x.no)} - ${esc(x.name)}</b><br><small>فواتير ${money(x.bills)} · مدفوع ${money(x.paid)} · تسويات ${money(x.adjustments)}</small></span><b>${money(x.balance)} ريال</b></div>`).join(''):'<div class="empty">لا يوجد مشتركون.</div>');
+}
+function exportAllStatements(){const rows=[['رقم المحل','اسم المشترك','الفواتير','المدفوعات','التسويات','الرصيد'],...sortedSubscribers(data.moshtarakin).map(m=>[m.no,m.name,data.invoices.filter(x=>x.no===m.no).reduce((s,x)=>s+(+x.amount||0),0),data.payments.filter(x=>x.no===m.no).reduce((s,x)=>s+(+x.amount||0),0),data.adjustments.filter(x=>x.no===m.no).reduce((s,x)=>s+(+x.amount||0),0),balance(m)])];downloadBlob('\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),'كشف_حساب_جميع_المشتركين.csv','text/csv;charset=utf-8');}
+function printAllStatements(){const w=window.open('','_blank');if(!w)return alert('اسمح بالنوافذ المنبثقة للطباعة.');const rows=sortedSubscribers(data.moshtarakin).map(m=>`<tr><td>${esc(m.no)}</td><td>${esc(m.name)}</td><td>${money(balance(m))}</td></tr>`).join('');w.document.write(`<html lang="ar" dir="rtl"><meta charset="utf-8"><title>كشف حساب الجميع</title><body style="font-family:Tahoma;padding:20px"><h2>كشف حساب جميع المشتركين</h2><table border="1" cellpadding="8" cellspacing="0"><tr><th>رقم المحل</th><th>المشترك</th><th>الرصيد</th></tr>${rows}</table><button onclick="print()">طباعة</button></body></html>`);w.document.close();}
+function renderAdjustmentList(){const q=(document.getElementById('adjSearch')?.value||'').toLowerCase();const list=data.moshtarakin.filter(m=>m.name.toLowerCase().includes(q)||m.no.toLowerCase().includes(q));document.getElementById('adjList').innerHTML=list.length?list.map(m=>`<div class="row"><span>${esc(m.no)} - ${esc(m.name)}<br><small>الرصيد: ${money(balance(m))} ريال</small></span><button class="small-btn" onclick="selectAdjustment('${esc(m.no)}')">إضافة تسوية</button></div>`).join(''):'<div class="empty">لا يوجد مشتركون.</div>';document.getElementById('adjHistory').innerHTML=data.adjustments.length?'<h4>آخر التسويات</h4>'+data.adjustments.slice(0,30).map(a=>`<div class="row"><span>${esc(a.name)}<br><small>${esc(a.reason)} · ${new Date(a.date).toLocaleDateString('ar')}</small></span><b>${Number(a.amount)<0?'-':''}${money(Math.abs(a.amount))} ريال</b></div>`).join(''):'';}
+function selectAdjustment(no){const m=data.moshtarakin.find(x=>x.no===no);if(!m)return;window.selectedAdjustmentNo=no;document.getElementById('adjForm').style.display='block';document.getElementById('adjName').textContent=m.name+' — '+m.no;document.getElementById('adjAmount').value='';document.getElementById('adjReason').value='';}
+function saveAdjustment(){const m=data.moshtarakin.find(x=>x.no===window.selectedAdjustmentNo),amount=Number(document.getElementById('adjAmount').value),reason=document.getElementById('adjReason').value.trim();if(!m||!Number.isFinite(amount)||amount===0||!reason){alert('اختر المشترك وأدخل مبلغًا غير صفري وسبب التسوية.');return;}data.adjustments.unshift({id:'ADJ-'+Date.now(),no:m.no,name:m.name,amount,reason,date:new Date().toISOString()});persist();renderAdjustmentList();kFilter();filterMos();alert('تم حفظ التسوية وتحديث الرصيد.');}
+function reportSort(list,controlId){
+ const mode=document.getElementById(controlId)?.value||'nameAsc'; const arr=[...list];
+ const name=(m)=>String(m.name||'');
+ const shop=(m)=>String(m.shopNo??m.no??'');
+ const meter=(m)=>String(m.meterNo??m.meter??m.no??'');
+ const cmp=(a,b)=>String(a).localeCompare(String(b),'ar',{numeric:true,sensitivity:'base'});
+ if(mode==='nameAsc')arr.sort((a,b)=>cmp(name(a),name(b)));
+ else if(mode==='nameDesc')arr.sort((a,b)=>cmp(name(b),name(a)));
+ else if(mode==='shopAsc')arr.sort((a,b)=>cmp(shop(a),shop(b)));
+ else if(mode==='shopDesc')arr.sort((a,b)=>cmp(shop(b),shop(a)));
+ else if(mode==='meterAsc')arr.sort((a,b)=>cmp(meter(a),meter(b)));
+ else if(mode==='meterDesc')arr.sort((a,b)=>cmp(meter(b),meter(a)));
+ return arr;
+}
+function reportRowsHtml(rows,amountFn,label){
+ if(!rows.length)return '<div class="empty">لا توجد بيانات تطابق هذا الكشف.</div>';
+ return rows.map(m=>`<div class="row"><span><b>${esc(m.no)} - ${esc(m.name)}</b><br><small>${label}</small></span><b>${money(amountFn(m))} ريال</b></div>`).join('');
+}
+function renderZeroReport(){
+ const rows=reportSort(data.moshtarakin.filter(m=>Number(m.prev||0)===0),'zeroSort');
+ const el=document.getElementById('zeroResult');el.innerHTML=`<p>عدد المشتركين ذوي القراءة الصفرية: <b>${rows.length}</b></p>`+reportRowsHtml(rows,m=>Number(m.prev||0),'القراءة الحالية المسجلة: '+0);
+}
+function renderOverdueReport(){
+ const raw=document.getElementById('overdueFromAmount')?.value||'';const min=raw===''?0:Number(raw);
+ if(!Number.isFinite(min)||min<0){alert('أدخل مبلغًا صحيحًا يساوي صفرًا أو أكبر.');return;}
+ const rows=reportSort(data.moshtarakin.filter(m=>balance(m)>0&&balance(m)>=min),'overdueSort');
+ const total=rows.reduce((sum,m)=>sum+balance(m),0);const el=document.getElementById('overdueResult');
+ el.innerHTML=`<p>عدد المشتركين: <b>${rows.length}</b> | إجمالي المبالغ المتأخرة: <b>${money(total)} ريال</b></p>`+reportRowsHtml(rows,m=>balance(m),'المبلغ المتأخر');
+}
+function renderCreditReport(){
+ const rows=reportSort(data.moshtarakin.filter(m=>balance(m)<0),'creditSort');
+ const total=rows.reduce((sum,m)=>sum+Math.abs(balance(m)),0);const el=document.getElementById('creditResult');
+ el.innerHTML=`<p>عدد المشتركين: <b>${rows.length}</b> | إجمالي المبالغ المتبقية لهم: <b>${money(total)} ريال</b></p>`+reportRowsHtml(rows,m=>Math.abs(balance(m)),'رصيد لصالح المشترك');
+}
+
+function renderReports(){const from=document.getElementById('reportFrom')?.value||'',to=document.getElementById('reportTo')?.value||'';const inRange=x=>{const d=String(x.date||'').slice(0,10);return (!from||d>=from)&&(!to||d<=to)};const bills=data.invoices.filter(inRange).reduce((s,x)=>s+(+x.amount||0),0),payments=data.payments.filter(inRange).reduce((s,x)=>s+(+x.amount||0),0),expenses=data.expenses.filter(inRange).reduce((s,x)=>s+(+x.amount||0),0),adjustments=data.adjustments.filter(inRange).reduce((s,x)=>s+(+x.amount||0),0);const net=payments-expenses;const el=document.getElementById('reportResult');if(el)el.innerHTML=`<div class="row"><span>إجمالي الفواتير</span><b>${money(bills)} ريال</b></div><div class="row"><span>إجمالي التحصيل</span><b>${money(payments)} ريال</b></div><div class="row"><span>إجمالي التسويات</span><b>${money(adjustments)} ريال</b></div><div class="row"><span>إجمالي المصروفات</span><b>${money(expenses)} ريال</b></div><div class="row"><span>صافي التحصيل بعد المصروفات</span><b>${money(net)} ريال</b></div><h4>تحصيل كل صندوق</h4>${(data.cashiers||[]).map(c=>`<div class="row"><span>${esc(c.name)}</span><b>${money(data.payments.filter(p=>p.cashierId===c.id).reduce((a,p)=>a+(Number(p.amount)||0),0))} ريال</b></div>`).join('')}<p style="font-size:12px;color:#64748b">صافي التحصيل = المقبوضات ناقص المصروفات. ملخص الصناديق في هذه النسخة محلي للتجربة فقط.</p>`;}
+function previewMeterPhoto(event){const f=event.target.files&&event.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('يرجى اختيار صورة للعداد.');event.target.value='';return;}const img=document.getElementById('meterPreview');img.src=URL.createObjectURL(f);img.style.display='block';document.getElementById('ocrStatus').textContent='تم التقاط الصورة. يمكنك قراءة الأرقام تلقائيًا، وستُحفظ الصورة مع الفاتورة.';
+ pendingMeterPhotoPromise=new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>{const source=new Image();source.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(source.width,source.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(source.width*scale));canvas.height=Math.max(1,Math.round(source.height*scale));canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);pendingMeterPhotoData=canvas.toDataURL('image/jpeg',0.72);resolve();};source.onerror=()=>{pendingMeterPhotoData=null;resolve();};source.src=reader.result;};reader.onerror=()=>{pendingMeterPhotoData=null;resolve();};reader.readAsDataURL(f);});}
+async function readMeterPhoto(){
+ const f=document.getElementById('meterPhoto').files?.[0];if(!f)return alert('صوّر العداد أو اختر صورة أولًا.');
+ const status=document.getElementById('ocrStatus');if(!window.Tesseract){status.textContent='مكتبة قراءة الصور غير متاحة. افتح الإنترنت ثم أعد المحاولة، أو أدخل القراءة يدويًا.';return;}
+ status.textContent='جارٍ تكبير نافذة الأرقام H00013M فقط...';
+ try{
+  const img=await new Promise((resolve,reject)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);resolve(im)};im.onerror=reject;im.src=u;});
+  const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+  // Crop the upper-middle register window; exclude the H and m³ labels and the lower dials.
+  const sx=Math.round(w*0.20), sy=Math.round(h*0.20), sw=Math.max(1,Math.round(w*0.60)), sh=Math.max(1,Math.round(h*0.30));
+  const canvas=document.createElement('canvas');canvas.width=Math.min(2400,sw*4);canvas.height=Math.min(1000,sh*4);
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.imageSmoothingEnabled=true;ctx.drawImage(img,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
+  const imd=ctx.getImageData(0,0,canvas.width,canvas.height),d=imd.data;
+  // Improve contrast without cutting off dim digit strokes.
+  for(let i=0;i<d.length;i+=4){const gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];let v=(gray-105)*1.75+128;v=Math.max(0,Math.min(255,v));d[i]=d[i+1]=d[i+2]=v;}
+  ctx.putImageData(imd,0,0);
+  status.textContent='قراءة الأرقام من النافذة المحددة فقط...';
+  const result=await Tesseract.recognize(canvas,'eng',{logger:m=>{if(m.status==='recognizing text')status.textContent='قراءة نافذة العداد: '+Math.round((m.progress||0)*100)+'%';},tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'7',preserve_interword_spaces:'0'});
+  const digits=String(result.data.text||'').replace(/[^0-9]/g,'');
+  if(!digits){status.textContent='لم تُقرأ الأرقام. قرّب الكاميرا بحيث تملأ نافذة الأرقام معظم الصورة، ثم أعد القراءة.';return;}
+  // Keep leading zeros in the status; the input field may display the numeric value without them.
+  document.getElementById('fCurr').value=Number(digits);
+  status.textContent='القراءة المستخرجة من نافذة الأرقام فقط: '+digits+' — تحقق منها قبل الحفظ.';
+ }catch(e){status.textContent='تعذرت قراءة نافذة الأرقام. أدخل القراءة يدويًا أو أعد التصوير بإضاءة جيدة.';}
+}
+function startBulkMessages(){bulkQueue=data.moshtarakin.filter(m=>m.phone);bulkIndex=0;document.getElementById('bulkProgress').textContent='تم تجهيز '+bulkQueue.length+' مشترك لديهم رقم هاتف. اضغط «فتح رسالة المشترك التالي» لبدء الإرسال واحدًا تلو الآخر.';}
+function nextBulkMessage(){if(!bulkQueue.length)return alert('اضغط بدء الإرسال للمشتركين أولًا.');if(bulkIndex>=bulkQueue.length){document.getElementById('bulkProgress').textContent='اكتملت قائمة الرسائل. عدد المشتركين: '+bulkQueue.length;return;}const m=bulkQueue[bulkIndex],channel=document.getElementById('bulkChannel').value;let msg=document.getElementById('bulkText').value.replaceAll('{الاسم}',m.name).replaceAll('{المتأخرات}',money(balance(m)));if(channel==='wa')openWhatsApp(m.phone,msg);else openSMS(m.phone,msg);bulkIndex++;document.getElementById('bulkProgress').textContent='تم فتح '+bulkIndex+' من '+bulkQueue.length+' رسائل. إذا لم تظهر الرسالة، تحقق من التطبيق ثم اضغط التالي.';}
+function stopBulkMessages(){bulkQueue=[];bulkIndex=0;document.getElementById('bulkProgress').textContent='تم إيقاف قائمة الإرسال.';}
+function prepareSarfDate(){const el=document.getElementById('sarfDate');if(el&&!el.value)el.value=new Date().toISOString().slice(0,10);}
+function refreshExpenseCategoryControls(){
+ const select=document.getElementById('sarfCategory'),filter=document.getElementById('sarfFilterCategory');
+ const previous=select.value,previousFilter=filter.value;
+ select.innerHTML='<option value="">— اختر نوع الصرفية —</option>'+data.expenseCategories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+ filter.innerHTML='<option value="">كل الأنواع</option>'+data.expenseCategories.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+ if(data.expenseCategories.includes(previous))select.value=previous;
+ if(data.expenseCategories.includes(previousFilter))filter.value=previousFilter;
+ document.getElementById('expenseCategoryList').innerHTML=data.expenseCategories.length?data.expenseCategories.map((c,i)=>`<div class="row"><span>${esc(c)}</span><span><button class="small-btn" style="background:#dbeafe" onclick="renameExpenseCategory(${i})">تعديل الاسم</button> <button class="small-btn" style="background:#fee2e2" onclick="deleteExpenseCategory(${i})">حذف</button></span></div>`).join(''):'<div class="empty">لا توجد أنواع صرفيات بعد. أضف النوع الذي تريده من الحقل أعلاه.</div>';
+}
+function addExpenseCategory(){const input=document.getElementById('newExpenseCategory'),name=input.value.trim();if(!name){alert('اكتب اسم نوع الصرفية أولًا.');return;}if(data.expenseCategories.some(c=>c.toLocaleLowerCase()===name.toLocaleLowerCase())){alert('هذا النوع موجود بالفعل.');return;}data.expenseCategories.push(name);data.expenseCategories.sort((a,b)=>a.localeCompare(b,'ar'));persist();input.value='';refreshExpenseCategoryControls();document.getElementById('sarfCategory').value=name;renderSarf();}
+function renameExpenseCategory(index){const old=data.expenseCategories[index];if(old===undefined)return;const value=prompt('اكتب الاسم الجديد لنوع الصرفية:',old);if(value===null)return;const name=value.trim();if(!name){alert('لا يمكن ترك اسم النوع فارغًا.');return;}if(data.expenseCategories.some((c,i)=>i!==index&&c.toLocaleLowerCase()===name.toLocaleLowerCase())){alert('يوجد نوع آخر بهذا الاسم.');return;}data.expenseCategories[index]=name;data.expenses.forEach(x=>{if(x.category===old)x.category=name;});persist();refreshExpenseCategoryControls();renderSarf();}
+function deleteExpenseCategory(index){const name=data.expenseCategories[index];if(name===undefined)return;if(data.expenses.some(x=>x.category===name)){alert('لا يمكن حذف هذا النوع لأنه مرتبط بصرفيات مسجلة. يمكنك تعديل اسمه بدلًا من ذلك.');return;}if(!confirm('هل تريد حذف نوع الصرفية «'+name+'»؟'))return;data.expenseCategories.splice(index,1);persist();refreshExpenseCategoryControls();renderSarf();}
+function saveSarf(){
+ const amount=Number(document.getElementById('sarfAmount').value),note=document.getElementById('sarfNote').value.trim(),category=document.getElementById('sarfCategory').value,date=document.getElementById('sarfDate').value||new Date().toISOString().slice(0,10),recipient=document.getElementById('sarfRecipient').value.trim(),notes=document.getElementById('sarfNotes').value.trim();
+ if(!data.expenseCategories.length){alert('أضف نوع الصرفية الذي تريده أولًا.');return;}
+ if(!category){alert('اختر نوع الصرفية.');return;}
+ if(!Number.isFinite(amount)||amount<=0||!note){alert('أدخل مبلغ الصرف والبيان.');return;}
+ data.expenses.unshift({id:'EXP-'+Date.now(),amount,note,category,date:new Date(date+'T12:00:00').toISOString(),recipient,notes});persist();document.getElementById('sarfAmount').value='';document.getElementById('sarfNote').value='';document.getElementById('sarfRecipient').value='';document.getElementById('sarfNotes').value='';prepareSarfDate();renderSarf();alert('تم حفظ الصرفية.');
+}
+function editSarf(id){const x=data.expenses.find(v=>String(v.id||'')===String(id));if(!x)return alert('تعذر العثور على الصرفية.');const note=prompt('بيان الصرف:',x.note||'');if(note===null)return;const amountText=prompt('المبلغ بالريال:',String(x.amount));if(amountText===null)return;const amount=Number(amountText);if(!note.trim()||!Number.isFinite(amount)||amount<=0){alert('البيان أو المبلغ غير صحيح.');return;}const cats=data.expenseCategories;if(!cats.includes(x.category)){alert('نوع هذه الصرفية غير موجود ضمن الأنواع الحالية. لا يمكن تعديلها قبل إعادة إنشاء النوع المناسب.');return;}const category=prompt('اكتب رقم النوع المطلوب من القائمة:\n'+cats.map((c,i)=>(i+1)+'. '+c).join('\n'),String(cats.indexOf(x.category)+1));if(category===null)return;const ci=Number(category)-1;if(!Number.isInteger(ci)||!cats[ci]){alert('رقم النوع غير صحيح.');return;}x.note=note.trim();x.amount=amount;x.category=cats[ci];const rec=prompt('اسم المستلم (اختياري):',x.recipient||'');if(rec!==null)x.recipient=rec.trim();const nt=prompt('ملاحظات (اختياري):',x.notes||'');if(nt!==null)x.notes=nt.trim();persist();renderSarf();}
+function deleteSarf(id){const x=data.expenses.find(v=>String(v.id||'')===String(id));if(!x)return;if(!confirm('هل تريد حذف هذه الصرفية؟'))return;data.expenses=data.expenses.filter(v=>v!==x);persist();renderSarf();}
+function renderSarf(){
+ refreshExpenseCategoryControls();
+ const from=document.getElementById('sarfFrom').value,to=document.getElementById('sarfTo').value,cat=document.getElementById('sarfFilterCategory').value,q=document.getElementById('sarfSearch').value.trim().toLowerCase();
+ const rows=data.expenses.filter(x=>{const d=String(x.date||'').slice(0,10);return(!from||d>=from)&&(!to||d<=to)&&(!cat||x.category===cat)&&(!q||[x.note,x.category,x.recipient,x.notes].some(v=>String(v||'').toLowerCase().includes(q)));});
+ const total=rows.reduce((sum,x)=>sum+(Number(x.amount)||0),0);document.getElementById('sarfTotal').innerHTML=`<span>إجمالي الصرفيات المعروضة (${rows.length})</span><b>${money(total)} ريال</b>`;
+ document.getElementById('sarfList').innerHTML=rows.length?rows.map(x=>`<div class="row"><div style="min-width:0;flex:1"><b>${esc(x.note)}</b><br><small>${esc(x.category||'نوع غير محدد')} · ${new Date(x.date).toLocaleDateString('ar')} ${x.recipient?'· المستلم: '+esc(x.recipient):''}</small>${x.notes?`<br><small>${esc(x.notes)}</small>`:''}</div><div style="text-align:left;white-space:nowrap"><b>${money(x.amount)} ريال</b><br><button class="small-btn" style="background:#dbeafe" onclick="editSarf('${esc(x.id||'')}')">تعديل</button> <button class="small-btn" style="background:#fee2e2" onclick="deleteSarf('${esc(x.id||'')}')">حذف</button></div></div>`).join(''):'<div class="empty">لا توجد صرفيات مطابقة للبحث.</div>';
+ const totals=data.expenseCategories.map(c=>({category:c,total:data.expenses.filter(x=>x.category===c&&(!from||String(x.date||'').slice(0,10)>=from)&&(!to||String(x.date||'').slice(0,10)<=to)).reduce((sum,x)=>sum+(Number(x.amount)||0),0)}));
+ document.getElementById('expenseCategoryTotals').innerHTML=totals.length?totals.map(x=>`<div class="row"><span>${esc(x.category)}</span><b>${money(x.total)} ريال</b></div>`).join(''):'<div class="empty">ستظهر إجماليات الأنواع بعد إضافتها.</div>';
+}
+function applyLogo(dataUrl){const img=document.getElementById('appLogo'),fallback=document.getElementById('defaultLogo');if(dataUrl){img.src=dataUrl;img.style.display='block';fallback.style.display='none';}else{img.removeAttribute('src');img.style.display='none';fallback.style.display='inline';}}
+function refreshLogoPreview(){const saved=localStorage.getItem(LOGO_KEY),preview=document.getElementById('logoPreview'),label=document.getElementById('logoPreviewText');const src=pendingLogoData||saved;if(src){preview.src=src;preview.style.display='block';label.textContent=pendingLogoData?'الشعار الجديد — اضغط حفظ الشعار لاعتماده':'الشعار الحالي المحفوظ';}else{preview.removeAttribute('src');preview.style.display='none';label.textContent='لم يتم اختيار شعار بعد';}}
+function previewLogo(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(!file.type.startsWith('image/')){alert('اختر ملف صورة صالحًا.');event.target.value='';return;}if(file.size>4*1024*1024){alert('حجم الصورة كبير. اختر صورة أقل من 4 ميجابايت.');event.target.value='';return;}const reader=new FileReader();reader.onload=()=>{pendingLogoData=reader.result;refreshLogoPreview();};reader.onerror=()=>alert('تعذر قراءة الصورة. حاول اختيار صورة أخرى.');reader.readAsDataURL(file);}
+function saveLogo(){if(!pendingLogoData){alert('اختر صورة أولًا، ثم اضغط حفظ الشعار.');return;}try{localStorage.setItem(LOGO_KEY,pendingLogoData);applyLogo(pendingLogoData);pendingLogoData=null;document.getElementById('logoFile').value='';refreshLogoPreview();alert('تم حفظ الشعار الجديد على هذا الجهاز.');}catch(e){alert('تعذر حفظ الصورة. جرّب صورة أصغر حجمًا.');}}
+function removeLogo(){localStorage.removeItem(LOGO_KEY);pendingLogoData=null;document.getElementById('logoFile').value='';applyLogo(null);refreshLogoPreview();alert('تمت استعادة الشعار الافتراضي.');}
+(function initLogo(){try{applyLogo(localStorage.getItem(LOGO_KEY));}catch(e){applyLogo(null);}})();
+function applyAppName(){const name=String(data.appName||'نظام المياه').trim()||'نظام المياه';document.querySelectorAll('.brand-name').forEach(el=>el.textContent=name);document.title=name;const input=document.getElementById('appName');if(input&&input.value!==name)input.value=name;}
+function saveSettings(){const n=Number(document.getElementById('unitPrice').value);if(!Number.isFinite(n)||n<0){alert('أدخل سعرًا صحيحًا.');return;}const appName=document.getElementById('appName').value.trim();if(!appName){alert('اكتب اسم التطبيق أولًا.');return;}data.unitPrice=n;data.appName=appName;data.autoMessage=document.getElementById('autoMessage').checked;persist();applyAppName();alert('تم حفظ الإعدادات واسم التطبيق.');}
+function phoneDigits(phone){return String(phone||'').replace(/[^0-9]/g,'').replace(/^00/,'');}
+function openWhatsApp(phone,msg){const n=phoneDigits(phone);if(!n){alert('لا يوجد رقم هاتف مسجل لهذا المشترك. افتح خانة المشتركين وأضف الرقم مع مفتاح الدولة.');return;}window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');}
+function openSMS(phone,msg){const n=String(phone||'').replace(/[^+0-9]/g,'');if(!n){alert('لا يوجد رقم هاتف مسجل لهذا المشترك.');return;}location.href='sms:'+n+'?body='+encodeURIComponent(msg);}
+function invoiceMessage(x){return `فاتورة مياه
+المشترك: ${x.name}
+رقم العداد/المحل: ${x.no}
+القراءة السابقة: ${x.prev}
+القراءة الحالية: ${x.current}
+الاستهلاك: ${x.units} وحدة
+سعر الوحدة: ${money(x.price)} ريال
+قيمة الفاتورة: ${money(x.amount)} ريال
+التاريخ: ${new Date(x.date).toLocaleDateString('ar')}`;}
+function paymentMessage(x){return `سند قبض مياه
+المشترك: ${x.name}
+رقم العداد/المحل: ${x.no}
+المبلغ المقبوض: ${money(x.amount)} ريال
+المتبقي: ${money(x.remaining)} ريال
+التاريخ: ${new Date(x.date).toLocaleDateString('ar')}`;}
+function sendInvoiceWhatsApp(){if(!lastSavedInvoice)return alert('احفظ فاتورة أولًا.');const m=data.moshtarakin.find(x=>x.no===lastSavedInvoice.no);openWhatsApp(m?.phone,invoiceMessage(lastSavedInvoice));}
+function sendInvoiceSMS(){if(!lastSavedInvoice)return alert('احفظ فاتورة أولًا.');const m=data.moshtarakin.find(x=>x.no===lastSavedInvoice.no);openSMS(m?.phone,invoiceMessage(lastSavedInvoice));}
+function sendPaymentWhatsApp(){if(!lastSavedPayment)return alert('احفظ سند قبض أولًا.');const m=data.moshtarakin.find(x=>x.no===lastSavedPayment.no);openWhatsApp(m?.phone,paymentMessage(lastSavedPayment));}
+function sendPaymentSMS(){if(!lastSavedPayment)return alert('احفظ سند قبض أولًا.');const m=data.moshtarakin.find(x=>x.no===lastSavedPayment.no);openSMS(m?.phone,paymentMessage(lastSavedPayment));}
+function showInvoiceSendOptions(){if(confirm('تم حفظ الفاتورة. هل تريد فتح واتساب لإرسالها الآن؟'))sendInvoiceWhatsApp();else if(confirm('هل تريد فتح رسالة SMS؟'))sendInvoiceSMS();}
+function showPaymentSendOptions(){if(confirm('تم حفظ سند القبض. هل تريد فتح واتساب لإرساله الآن؟'))sendPaymentWhatsApp();else if(confirm('هل تريد فتح رسالة SMS؟'))sendPaymentSMS();}
+function recordDateKey(value){const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function resetRecordsDateFilter(){document.getElementById('recordsFrom').value='';document.getElementById('recordsTo').value='';renderRecords();}
+function renderRecords(){
+ const el=document.getElementById('recordsList');
+ const from=document.getElementById('recordsFrom')?.value||'';const to=document.getElementById('recordsTo')?.value||'';
+ if(from&&to&&from>to){el.innerHTML='<div class="empty">تاريخ البداية يجب أن يكون قبل تاريخ النهاية أو مساويًا له.</div>';return;}
+ let rows=[...data.invoices.map(x=>({...x,kind:'فاتورة'})),...data.payments.map(x=>({...x,kind:'سند قبض'})),...data.expenses.map(x=>({...x,kind:'سند صرف',name:x.note,amount:x.amount})),...data.adjustments.map(x=>({...x,kind:'تسوية',name:x.name+' — '+x.reason}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
+ rows=rows.filter(x=>{const key=recordDateKey(x.date);return key&&(!from||key>=from)&&(!to||key<=to);}).slice(0,100);
+ el.innerHTML=rows.length?rows.map((x,i)=>`<div class="row"><span><b>${esc(x.kind)} — ${esc(x.name||'')}</b><br><small>${new Date(x.date).toLocaleString('ar')} · ${esc(x.no||'')}</small></span><span><b>${money(x.amount)} ريال</b><br>${x.kind==='فاتورة'?`<button class="small-btn" onclick="editInvoice('${esc(x.id||'')}')">تعديل الفاتورة</button><button class="small-btn" onclick="recordInvoiceWhatsApp(${i})">واتساب</button>`:x.kind==='سند قبض'?`<button class="small-btn" onclick="recordPaymentWhatsApp(${i})">واتساب</button>`:''}<button class="small-btn" onclick="printRecord('${esc(x.kind)}','${esc(x.name||'')}','${esc(x.no||'')}','${Number(x.amount)||0}','${esc(x.date)}')">طباعة</button></span></div>`).join(''):'<div class="empty">لا توجد سجلات ضمن الفترة المحددة.</div>';
+}
+function editInvoice(id){const x=data.invoices.find(v=>String(v.id||'')===String(id));if(!x)return alert('تعذر العثور على الفاتورة. حدّث السجلات ثم حاول مرة أخرى.');const curr=prompt('القراءة الحالية',x.current);if(curr===null)return;const c=Number(curr);if(!Number.isFinite(c)||c<Number(x.prev)){alert('القراءة الحالية غير صحيحة.');return;}const priceInput=prompt('سعر الوحدة',x.price||data.unitPrice);if(priceInput===null)return;const price=Number(priceInput);if(!Number.isFinite(price)||price<0){alert('سعر الوحدة غير صحيح.');return;}const oldCurrent=x.current,units=c-Number(x.prev),amount=units*price;const confirmEdit=confirm('الاستهلاك: '+units+' وحدة\nقيمة الفاتورة الجديدة: '+money(amount)+' ريال\nهل تريد حفظ التعديل؟');if(!confirmEdit)return;x.current=c;x.units=units;x.price=price;x.amount=amount;x.editedAt=new Date().toISOString();const latest=data.invoices.filter(v=>v.no===x.no).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];const m=data.moshtarakin.find(v=>v.no===x.no);if(m&&latest===x)m.prev=c;persist();renderRecords();kFilter();filterMos();pFilter();alert('تم تعديل الفاتورة وتحديث الحساب.');}
+function recordInvoiceWhatsApp(i){const rows=[...data.invoices].sort((a,b)=>new Date(b.date)-new Date(a.date));const x=rows[i];if(!x)return;openWhatsApp(data.moshtarakin.find(m=>m.no===x.no)?.phone,invoiceMessage(x));}
+function recordPaymentWhatsApp(i){const rows=[...data.payments].sort((a,b)=>new Date(b.date)-new Date(a.date));const x=rows[i];if(!x)return;const m=data.moshtarakin.find(m=>m.no===x.no);openWhatsApp(m?.phone,paymentMessage({...x,remaining:balance(m||{no:x.no})}));}
+function printRecord(kind,name,no,amount,date){const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة للطباعة.');return;}w.document.write(`<html lang="ar" dir="rtl"><meta charset="utf-8"><title>${kind}</title><body style="font-family:Tahoma;padding:24px"><h2>${kind}</h2><p>المشترك/البيان: ${name}</p><p>رقم العداد/المحل: ${no}</p><p>المبلغ: ${money(amount)} ريال</p><p>التاريخ: ${new Date(date).toLocaleString('ar')}</p><button onclick="print()">طباعة</button></body></html>`);w.document.close();}
+
+function exportExcel(){
+ const rows=[['رقم العداد/المحل','اسم المشترك','المنطقة','الهاتف','القراءة السابقة','المتأخرات'],...data.moshtarakin.map(m=>[m.no,m.name,m.area||'',m.phone||'',m.prev||0,balance(m)])];
+ const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ downloadBlob(csv,'moshtarakin.csv','text/csv;charset=utf-8');
+}
+function importCSV(e){
+ const file=e.target.files&&e.target.files[0];if(!file)return;
+ const reader=new FileReader();reader.onload=()=>{
+  const lines=String(reader.result||'').replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);
+  let added=0;
+  lines.slice(1).forEach(line=>{
+   const cols=line.split(',').map(s=>s.trim().replace(/^"|"$/g,'').replace(/""/g,'"'));
+   if(cols.length>=2&&cols[0]&&cols[1]&&!data.moshtarakin.some(m=>m.no===cols[0])){data.moshtarakin.push({no:cols[0],name:cols[1],area:cols[2]||'',phone:cols[3]||'',prev:Number(cols[4])||0,openingBalance:0});added++;}
   });
+  persist();filterMos();fFilter();pFilter();alert(`تم استيراد ${added} مشترك. إذا كان الملف يحتوي على فواصل داخل الحقول، راجع البيانات بعد الاستيراد.`);
+ };reader.readAsText(file);e.target.value='';
 }
-function stopScan(){
-  try{ if(html5QrcodeScanner){ html5QrcodeScanner.stop().then(function(){ try{html5QrcodeScanner.clear()}catch(e){} }).catch(function(){}); html5QrcodeScanner=null; } }catch(e){}
-  document.getElementById('reader').style.display='none';
-  document.getElementById('stopBtn').style.display='none';
-  document.getElementById('scanBtn').style.display='block';
-  document.getElementById('camStatus').innerText='الكاميرا متوقفة';
-}
-function onScanSuccess(decodedText){
-  var txt=(decodedText||'').trim();
-  var parsed=parseBarcode(txt);
-  var sub=null;
-  for(var i=0;i<subs.length;i++){ if(subs[i].no==parsed.no) { sub=subs[i]; break; } }
-  if(!sub){ for(var i=0;i<subs.length;i++){ if(subs[i].barcode==txt || subs[i].no==txt) { sub=subs[i]; break; } } }
-  if(sub){ stopScan(); showFound(sub); if(navigator.vibrate) navigator.vibrate(200); }
-  else{
-    if(parsed.name){
-      stopScan();
-      var temp={ id:0, name:parsed.name, no:parsed.no, barcode:txt, phone:'', lastReading:0 };
-      showFound(temp);
-      document.getElementById('foundDetails').innerHTML+='<br><small style="color:orange">⚠️ غير محفوظ - الاسم من الباركود</small>';
-      if(navigator.vibrate) navigator.vibrate(200);
-    }else{ document.getElementById('camStatus').innerText='رقم غير موجود: '+txt; }
+let pdfImportExtracted='';
+async function importPDFSubscribers(e){
+ const file=e.target.files&&e.target.files[0];e.target.value='';if(!file)return;
+ document.getElementById('pdfImportModal').style.display='block';document.getElementById('pdfImportFileName').value=file.name;document.getElementById('pdfImportText').value='جارٍ قراءة ملف PDF...';document.getElementById('pdfImportStatus').textContent='';
+ try{
+  if(!window.pdfjsLib){await loadPDFJS();}
+  const buf=await file.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let pages=[];
+  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const content=await page.getTextContent();let items=content.items.filter(x=>x.str&&x.str.trim());let lines=[];let currentY=null,row=[];
+   items.sort((a,b)=>Math.abs(b.transform[5]-a.transform[5])>3?b.transform[5]-a.transform[5]:a.transform[4]-b.transform[4]);
+   for(const it of items){const y=Math.round(it.transform[5]);if(currentY!==null&&Math.abs(y-currentY)>3){if(row.length)lines.push(row.join('   '));row=[];}currentY=y;row.push(it.str.trim());}if(row.length)lines.push(row.join('   '));pages.push(lines.join('\n'));
   }
+  pdfImportExtracted=pages.join('\n\n');document.getElementById('pdfImportText').value=pdfImportExtracted;
+  if(!pdfImportExtracted.trim())document.getElementById('pdfImportStatus').textContent='لم يتم العثور على نص. يبدو أن PDF مصوّر أو محمي؛ حوّله إلى PDF قابل لتحديد النص أو أدخل البيانات يدويًا.';
+  else document.getElementById('pdfImportStatus').textContent=`تم استخراج النص من ${pdf.numPages} صفحة. راجع الأسطر ورتّب الأعمدة قبل الاستيراد لأن ملفات الأنظمة المختلفة قد تختلف.`;
+ }catch(err){document.getElementById('pdfImportText').value='';document.getElementById('pdfImportStatus').textContent='تعذرت قراءة الملف. تأكد أنه PDF سليم وأن الإنترنت متاح لتحميل قارئ PDF.';}
 }
-function showFound(sub){
-  currentFound=sub;
-  document.getElementById('foundBox').style.display='block';
-  document.getElementById('foundCode').innerText=sub.no;
-  document.getElementById('foundName').innerText=sub.name;
-  document.getElementById('foundDetails').innerHTML=
-    '<b>الاسم:</b> '+sub.name+'<br>'+
-    '<b>رقم العداد:</b> '+sub.no+'<br>'+
-    '<b>الهاتف:</b> '+(sub.phone||'لا يوجد')+'<br>'+
-    '<b>آخر قراءة:</b> '+(sub.lastReading||0)+'<br>'+
-    '<b>الباركود:</b> <small>'+(sub.barcode||sub.no+'|'+sub.name)+'</small>';
-  document.getElementById('prevReading').innerText=sub.lastReading||0;
-  document.getElementById('reading').value='';
-  document.getElementById('consumption').innerText='0';
-  document.getElementById('currReading').innerText='0';
-  document.getElementById('totalAmount').innerText='0 ريال';
-  document.getElementById('pricePerUnit').innerText=unitPrice;
-  document.getElementById('currentPriceDisplay').innerText=unitPrice;
-  document.getElementById('calcFormula').innerText='';
-  document.getElementById('foundBox').scrollIntoView({behavior:'smooth'});
+function loadPDFJS(){return new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';sc.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve();};sc.onerror=reject;document.head.appendChild(sc);});}
+function closePDFImport(){document.getElementById('pdfImportModal').style.display='none';}
+function commitPDFImport(){
+ const text=document.getElementById('pdfImportText').value;const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);let added=0,skipped=0;
+ for(let line of lines){if(/رقم\s*(المحل|العداد)|اسم\s*المشترك|اسم العميل|كشف حساب|الإجمالي|اجمالي|صفحة\s*\d/i.test(line))continue;
+  let cols;if(line.includes('|'))cols=line.split('|').map(x=>x.trim());else if(line.includes('\t'))cols=line.split('\t').map(x=>x.trim());else cols=line.split(/\s{2,}/).map(x=>x.trim());if(cols.length<2)continue;
+  let no='',name='',area='',phone='',prev=0,arrears=0;const clean=v=>String(v||'').replace(/[^\p{L}\p{N}٠-٩۰-۹-]/gu,'');const first=clean(cols[0]),second=clean(cols[1]);
+  if(/^[\d٠-٩۰-۹-]+$/.test(first)){no=first;name=cols[1];}else if(/^[\d٠-٩۰-۹-]+$/.test(second)){name=cols[0];no=second;}else continue;
+  if(!no||!name||/^[-–—\d.,\s]+$/.test(name))continue;area=cols[2]||'';phone=cols[3]||'';prev=parseImportNumber(cols[4]);arrears=parseImportNumber(cols[5]);
+  if(data.moshtarakin.some(m=>String(m.no)===String(no))){skipped++;continue;}data.moshtarakin.push({no,name,area,phone,prev,openingBalance:arrears});added++;
+ }
+ if(!added){document.getElementById('pdfImportStatus').textContent='لم تُضف أي بيانات. رتّب كل مشترك في سطر: رقم المحل | الاسم | المنطقة | الهاتف | القراءة السابقة | المتأخرات.';return;}
+ persist();filterMos();fFilter();pFilter();kFilter();document.getElementById('pdfImportStatus').textContent=`تم استيراد ${added} مشترك. تم تجاهل ${skipped} رقمًا موجودًا مسبقًا. راجع البيانات والأرصدة بعد الاستيراد.`;alert(`تم استيراد ${added} مشترك من PDF. تم تجاهل ${skipped} مشترك مكرر.`);
 }
-function clearFound(){ document.getElementById('foundBox').style.display='none'; currentFound=null; }
-document.getElementById('reading').addEventListener('input',function(){
-  var curr=parseInt(this.value)||0;
-  var prev=currentFound? (currentFound.lastReading||0):0;
-  var cons=Math.max(0,curr-prev);
-  var total=cons*unitPrice;
-  document.getElementById('currReading').innerText=curr;
-  document.getElementById('consumption').innerText=cons;
-  document.getElementById('totalAmount').innerText=total+' ريال';
-  document.getElementById('calcFormula').innerText=cons+' × '+unitPrice+' = '+total+' ريال';
-});
-document.getElementById('n_no').addEventListener('input',function(){
-  var name=document.getElementById('n_name').value||'الاسم';
-  var no=this.value||'---';
-  document.getElementById('prevBox').innerText=no+'|'+name;
-  document.getElementById('prevName').innerText=name+' - عداد: '+no;
-});
-document.getElementById('n_name').addEventListener('input',function(){
-  var no=document.getElementById('n_no').value||'---';
-  var name=this.value||'الاسم';
-  document.getElementById('prevBox').innerText=no+'|'+name;
-  document.getElementById('prevName').innerText=name+' - عداد: '+no;
-});
-function manualSearch(){
-  var q=document.getElementById('manualSearch').value.toLowerCase();
-  var list=document.getElementById('manualList');
-  list.innerHTML='';
-  if(!q) return;
-  var f=[];
-  for(var i=0;i<subs.length;i++){ var hay=(subs[i].no+' '+subs[i].name+' '+(subs[i].barcode||'')).toLowerCase(); if(hay.indexOf(q)>-1) f.push(subs[i]); if(f.length>=6) break; }
-  for(var i=0;i<f.length;i++){
-    var s=f[i];
-    var div=document.createElement('div');
-    div.style="background:#fff;border:2px solid #7c3aed;border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer";
-    div.innerHTML='<b>'+s.no+'</b> - '+s.name;
-    (function(sub){ div.onclick=function(){ showFound(sub); list.innerHTML=''; document.getElementById('manualSearch').value=sub.no; }; })(s);
-    list.appendChild(div);
-  }
+function parseImportNumber(v){if(!v)return 0;const s=String(v).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[,٬]/g,'').replace(/[^\d.-]/g,'');const n=Number(s);return Number.isFinite(n)?n:0;}
+function openPrintablePDF(title,tableHtml){const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة حتى تتمكن من حفظ التقرير PDF.');return;}w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Tahoma,Arial,sans-serif;padding:22px;color:#111}h2{text-align:center}p{margin:8px 0}table{width:100%;border-collapse:collapse;margin-top:15px;font-size:12px}th,td{border:1px solid #555;padding:7px;text-align:right}th{background:#eaf2f8}button{padding:10px 18px;margin:12px 0}@media print{button{display:none}body{padding:0}}</style></head><body><h2>${esc(title)}</h2><p>تاريخ التصدير: ${new Date().toLocaleDateString('ar')}</p>${tableHtml}<button onclick="window.print()">حفظ / طباعة PDF</button><script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);w.document.close();}
+function exportSubscribersPDF(){const rows=sortedSubscribers(data.moshtarakin);const table='<table><thead><tr><th>رقم المحل/العداد</th><th>اسم المشترك</th><th>المنطقة</th><th>الهاتف</th><th>القراءة السابقة</th><th>المتأخرات</th></tr></thead><tbody>'+rows.map(m=>`<tr><td>${esc(m.no)}</td><td>${esc(m.name)}</td><td>${esc(m.area||'')}</td><td>${esc(m.phone||'')}</td><td>${money(m.prev||0)}</td><td>${money(balance(m))}</td></tr>`).join('')+'</tbody></table>';openPrintablePDF('قائمة المشتركين - نظام المياه',table);}
+function toggleBarcodeSelection(no,checked){
+ if(checked)selectedBarcodeNos.add(String(no));else selectedBarcodeNos.delete(String(no));
+ updateBarcodeSelectionCount();
 }
-function saveInvoice(){
-  if(!currentFound){ alert('صور الباركود أولاً'); return; }
-  var curr=parseInt(document.getElementById('reading').value);
-  if(!curr && curr!==0){ alert('أدخل القراءة'); return; }
-  var prev=currentFound.lastReading||0;
-  var cons=Math.max(0,curr-prev);
-  var total=cons*unitPrice;
-  invoices.push({id:Date.now(), no:currentFound.no, name:currentFound.name, prev:prev, curr:curr, cons:cons, price:unitPrice, total:total, date:new Date().toLocaleString('ar-YE')});
-  if(currentFound.id!=0) currentFound.lastReading=curr;
-  save();
-  alert('تم حفظ الفاتورة\nالاسم: '+currentFound.name+'\nرقم العداد: '+currentFound.no+'\n'+cons+' × '+unitPrice+' = '+total+' ريال');
-  renderInvoices();
-  clearFound();
+const selectedBarcodeNos=new Set();
+function selectVisibleBarcodes(checked){
+ document.querySelectorAll('#mosList .barcode-select').forEach(box=>{
+  box.checked=checked;
+  const no=String(box.getAttribute('data-sub-no'));
+  if(checked)selectedBarcodeNos.add(no);else selectedBarcodeNos.delete(no);
+ });
+ updateBarcodeSelectionCount();
 }
-function printInvoice(){
-  if(!currentFound) return;
-  var curr=document.getElementById('reading').value;
-  var cons=document.getElementById('consumption').innerText;
-  var total=document.getElementById('totalAmount').innerText;
-  var w=window.open(''); w.document.write('<html dir="rtl"><head><meta charset="utf-8"><style>body{font-family:Tahoma;padding:20px;text-align:center}table{width:100%;border-collapse:collapse}th,td{border:1px solid #000;padding:8px;text-align:right}.big{font-size:24px;font-weight:900;border:3px solid #000;padding:12px;display:inline-block;margin:10px;word-break:break-all}</style></head><body><h2>فاتورة مياه</h2><h3>'+currentFound.name+'</h3><p>رقم العداد: <b>'+currentFound.no+'</b></p><table><tr><th>بيان</th><th>قيمة</th></tr><tr><td>السابقة</td><td>'+document.getElementById('prevReading').innerText+'</td></tr><tr><td>الحالية</td><td>'+curr+'</td></tr><tr><td>الاستهلاك</td><td>'+cons+' وحدة</td></tr><tr><td>سعر الوحدة</td><td>'+unitPrice+' ريال</td></tr><tr><td>الإجمالي</td><td>'+total+'</td></tr></table><br><div class="big">'+currentFound.no+'</div><div>رقم العداد: '+currentFound.no+'</div><div>'+currentFound.name+'</div><br><button onclick="window.print()">🖨️ طباعة</button><script>setTimeout(()=>window.print(),400)<\/script></body></html>'); w.document.close();
+function updateBarcodeSelectionCount(){
+ const el=document.getElementById('barcodeSelectionCount');
+ if(el)el.textContent='الباركودات المحددة: '+selectedBarcodeNos.size;
 }
-function renderInvoices(){
-  var log=document.getElementById('invoicesLog');
-  if(!log) return;
-  log.innerHTML='';
-  if(!invoices.length){ log.innerHTML='<div style="text-align:center;color:#999">لا توجد فواتير</div>'; return; }
-  var rev=invoices.slice(-20).reverse();
-  for(var i=0;i<rev.length;i++){ var inv=rev[i]; var div=document.createElement('div'); div.style="background:#f8f9ff;border:1px solid #eee;padding:8px;margin-bottom:6px;border-radius:8px;font-size:12px"; div.innerHTML='<b>'+inv.no+'</b> - '+inv.name+' - '+inv.cons+' × '+inv.price+' = '+inv.total+' ريال<br><small>'+inv.date+'</small>'; log.appendChild(div); }
+function exportSelectedBarcodesPDF(){
+ const rows=sortedSubscribers(data.moshtarakin.filter(m=>selectedBarcodeNos.has(String(m.no))));
+ if(!rows.length){alert('حدد باركودًا واحدًا على الأقل من قائمة المشتركين أولًا.');return;}
+ createBarcodesPDF(rows,'باركودات المشتركين المحددين');
 }
-save(); render(); updatePriceDisplay();
-document.getElementById('unitPrice').addEventListener('input',updatePreview);
-setTimeout(function(){
-  var s=document.createElement('script');
-  s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-  s.onload=function(){ document.getElementById('camStatus').innerText='✅ الكاميرا جاهزة'; };
-  s.onerror=function(){ document.getElementById('camStatus').innerText='❌ يحتاج إنترنت أول مرة'; };
-  document.head.appendChild(s);
-}, 800);
+function exportAllBarcodesPDF(){
+ const rows=sortedSubscribers(data.moshtarakin);
+ if(!rows.length){alert('لا يوجد مشتركون لتصدير باركوداتهم.');return;}
+ createBarcodesPDF(rows,'باركودات جميع المشتركين');
+}
+function createBarcodesPDF(rows,heading){
+
+ const cards=rows.map(m=>`<div class="barcode-card"><div class="sub-name">${esc(m.name||'')}</div><div class="sub-no">رقم المحل / المشترك: ${esc(m.no)}</div><div class="qr" data-code="${esc('WATER-SUB:'+m.no)}"></div></div>`).join('');
+ const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة حتى تتمكن من إنشاء ملف PDF.');return;}
+ w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>باركودات جميع المشتركين - نظام المياه</title><style>body{font-family:Tahoma,Arial,sans-serif;margin:0;padding:12mm;color:#111}.head{text-align:center;margin-bottom:12px}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8mm}.barcode-card{border:1px solid #888;border-radius:8px;padding:8px 5px;text-align:center;break-inside:avoid;page-break-inside:avoid;min-height:45mm;display:flex;flex-direction:column;align-items:center;justify-content:center}.sub-name{font-size:14px;font-weight:bold;margin-bottom:5px;overflow-wrap:anywhere}.sub-no{font-size:11px;margin-bottom:5px}.qr{width:125px;height:125px;display:flex;align-items:center;justify-content:center}.qr img,.qr canvas{max-width:100%;height:auto!important}.actions{text-align:center;margin:12px}.actions button{padding:10px 18px;font-size:16px}@page{size:A4;margin:10mm}@media print{body{padding:0}.actions{display:none}.cards{gap:5mm}}@media(max-width:600px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}</style></head><body><div class="head"><h2>${heading}</h2><div>نظام المياه — عدد الباركودات: ${rows.length}</div></div><div class="cards">${cards}</div><div class="actions"><button onclick="window.print()">حفظ / طباعة PDF</button></div><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.onload=()=>{document.querySelectorAll('.qr').forEach(el=>{const value=el.getAttribute('data-code');if(window.QRCode){new QRCode(el,{text:value,width:125,height:125,correctLevel:QRCode.CorrectLevel.M});}else{el.textContent='تعذر تحميل الباركود؛ تحقق من الإنترنت.';}});setTimeout(()=>window.print(),900);};<\/script></body></html>`);
+ w.document.close();
+}
+function exportAllStatementsPDF(){const rows=sortedSubscribers(data.moshtarakin);const table='<table><thead><tr><th>رقم المحل</th><th>اسم المشترك</th><th>إجمالي الفواتير</th><th>المدفوعات</th><th>التسويات</th><th>المتأخرات</th></tr></thead><tbody>'+rows.map(m=>{const bills=data.invoices.filter(x=>x.no===m.no).reduce((s,x)=>s+(+x.amount||0),0),paid=data.payments.filter(x=>x.no===m.no).reduce((s,x)=>s+(+x.amount||0),0),adj=data.adjustments.filter(x=>x.no===m.no).reduce((s,x)=>s+(+x.amount||0),0);return `<tr><td>${esc(m.no)}</td><td>${esc(m.name)}</td><td>${money(bills)}</td><td>${money(paid)}</td><td>${money(adj)}</td><td>${money(balance(m))}</td></tr>`;}).join('')+'</tbody></table>';openPrintablePDF('كشف حساب جميع المشتركين',table);}
+
+function backupData(){downloadBlob(JSON.stringify({app:'نظام المياه',version:'5.19',createdAt:new Date().toISOString(),data},null,2),'water-billing-backup.json','application/json');}
+const DRIVE_CLIENT_KEY='water_billing_google_drive_client_id_v1';
+const DRIVE_FILE_NAME='نظام المياه - نسخة احتياطية.json';
+let driveTokenClient=null,driveAccessToken=null,driveTokenExpiresAt=0;
+(function loadDriveClientId(){const el=document.getElementById('driveClientId');if(el)el.value=localStorage.getItem(DRIVE_CLIENT_KEY)||'';})();
+function driveStatus(msg){const el=document.getElementById('driveStatus');if(el)el.textContent=msg;}
+function getDriveClientId(){const el=document.getElementById('driveClientId');const id=(el?.value||'').trim();if(!id||!id.endsWith('.apps.googleusercontent.com'))throw new Error('أدخل OAuth Client ID الصحيح، وينتهي عادةً بـ apps.googleusercontent.com.');localStorage.setItem(DRIVE_CLIENT_KEY,id);return id;}
+function loadGoogleIdentity(){return new Promise((resolve,reject)=>{if(window.google?.accounts?.oauth2){resolve();return;}const old=document.getElementById('googleIdentityScript');if(old){const timer=setInterval(()=>{if(window.google?.accounts?.oauth2){clearInterval(timer);resolve();}},100);old.addEventListener('error',()=>{clearInterval(timer);reject(new Error('تعذر تحميل مكتبة تسجيل الدخول من Google. تحقق من الإنترنت.'));},{once:true});setTimeout(()=>{clearInterval(timer);if(!window.google?.accounts?.oauth2)reject(new Error('لم تكتمل تهيئة تسجيل الدخول من Google. تحقق من الإنترنت ثم أعد فتح التطبيق.'));},15000);return;}const sc=document.createElement('script');sc.id='googleIdentityScript';sc.src='https://accounts.google.com/gsi/client';sc.onload=resolve;sc.onerror=()=>reject(new Error('تعذر تحميل مكتبة تسجيل الدخول من Google. تحقق من الإنترنت.'));document.head.appendChild(sc);});}
+async function requestDriveToken(){await loadGoogleIdentity();const clientId=getDriveClientId();return new Promise((resolve,reject)=>{try{driveTokenClient=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/drive.file',callback:(resp)=>{if(resp.error){driveStatus('فشل تسجيل الدخول: '+resp.error);reject(new Error(resp.error));return;}driveAccessToken=resp.access_token;driveTokenExpiresAt=Date.now()+(Number(resp.expires_in||3600)-60)*1000;driveStatus('تم ربط Google Drive بنجاح. يمكنك الآن حفظ نسخة أو استعادتها.');resolve(driveAccessToken);},error_callback:(e)=>{const msg=e?.message||e?.type||'رفضت نافذة تسجيل الدخول أو تعذر فتحها.';driveStatus('تعذر تسجيل الدخول: '+msg+'\nإذا كان التطبيق مفتوحًا كملف محلي، افتحه من رابط HTTPS مسموح به في Google Cloud.');reject(new Error(msg));}});driveTokenClient.requestAccessToken({prompt:driveAccessToken&&Date.now()<driveTokenExpiresAt?'':'consent'});}catch(e){reject(e);}});}
+async function ensureDriveToken(){if(driveAccessToken&&Date.now()<driveTokenExpiresAt)return driveAccessToken;return await requestDriveToken();}
+async function connectGoogleDrive(){driveStatus('جارٍ فتح تسجيل الدخول إلى Google...');try{await requestDriveToken();}catch(e){if(!document.getElementById('driveStatus').textContent.includes('تعذر تسجيل الدخول'))driveStatus('تعذر ربط Google Drive. '+(e.message||e));}}
+async function driveApi(path,options={}){const token=await ensureDriveToken();const res=await fetch('https://www.googleapis.com/drive/v3/'+path,{...options,headers:{Authorization:'Bearer '+token,...(options.headers||{})}});if(!res.ok){const body=await res.text();throw new Error('Google Drive ('+res.status+'): '+body.slice(0,350));}if(res.status===204)return null;return await res.json();}
+async function findDriveBackup(){const q=encodeURIComponent("name='"+DRIVE_FILE_NAME.replace(/'/g,"\\'")+"' and trashed=false");const r=await driveApi('files?q='+q+'&orderBy=modifiedTime%20desc&pageSize=10&fields=files(id,name,modifiedTime,mimeType)');return (r.files||[])[0]||null;}
+async function backupToGoogleDrive(){driveStatus('جارٍ حفظ نسخة احتياطية في Google Drive...');try{await ensureDriveToken();const existing=await findDriveBackup();const payload=JSON.stringify({app:'نظام المياه',version:'5.19',createdAt:new Date().toISOString(),data},null,2);const boundary='-------waterBackup'+Date.now();const metadata=JSON.stringify({name:DRIVE_FILE_NAME,mimeType:'application/json'});const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+metadata+'\r\n--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+payload+'\r\n--'+boundary+'--';const endpoint=existing?'https://www.googleapis.com/upload/drive/v3/files/'+existing.id+'?uploadType=multipart&fields=id,name,modifiedTime':'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,modifiedTime';const token=driveAccessToken;const res=await fetch(endpoint,{method:existing?'PATCH':'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary},body});const txt=await res.text();if(!res.ok)throw new Error('فشل الرفع ('+res.status+'): '+txt.slice(0,300));const f=JSON.parse(txt);driveStatus('✅ تم حفظ النسخة الاحتياطية في Google Drive بنجاح.\nالملف: '+f.name+'\nآخر حفظ: '+new Date(f.modifiedTime||Date.now()).toLocaleString('ar'));}catch(e){driveStatus('❌ تعذر حفظ النسخة.\n'+(e.message||e)+'\n\nتحقق من Client ID ونوع بيانات الاعتماد واتصال الإنترنت.');}}
+async function restoreFromGoogleDrive(){if(!confirm('سيتم استبدال بيانات هذا الهاتف ببيانات آخر نسخة محفوظة في Google Drive. هل تريد المتابعة؟'))return;driveStatus('جارٍ البحث عن آخر نسخة في Google Drive...');try{const f=await findDriveBackup();if(!f)throw new Error('لم يتم العثور على نسخة احتياطية في Google Drive. احفظ نسخة أولًا.');const token=await ensureDriveToken();const res=await fetch('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media',{headers:{Authorization:'Bearer '+token}});if(!res.ok)throw new Error('تعذر تنزيل النسخة ('+res.status+').');const backup=await res.json();const restored=backup.data||backup;if(!restored||!Array.isArray(restored.moshtarakin)||!Array.isArray(restored.invoices)||!Array.isArray(restored.payments))throw new Error('محتوى النسخة غير صالح أو لا يتوافق مع نظام المياه.');if(!Array.isArray(restored.expenses))restored.expenses=[];if(!Array.isArray(restored.adjustments))restored.adjustments=[];if(!Array.isArray(restored.cashiers))restored.cashiers=[];data={...data,...restored};persist();filterMos();fFilter();pFilter();kFilter();renderCashboxes();driveStatus('✅ تمت استعادة النسخة بنجاح.\nالملف: '+f.name+'\nالمشتركون: '+data.moshtarakin.length+'\nالفواتير: '+data.invoices.length+'\nسندات القبض: '+data.payments.length+'\nأُعيد تحميل البيانات المحفوظة على هذا الهاتف.');}catch(e){driveStatus('❌ تعذرت الاستعادة.\n'+(e.message||e));}}
+function downloadBlob(content,name,type){const blob=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function createCashier(){
+ const name=document.getElementById('cbName').value.trim(),username=document.getElementById('cbUser').value.trim(),password=document.getElementById('cbPass').value;
+ if(!name||!username||password.length<4){alert('أدخل اسم المحصّل واسم المستخدم وكلمة سر من 4 أحرف/أرقام على الأقل.');return;}
+ if(data.cashiers.some(c=>c.username.toLowerCase()===username.toLowerCase())){alert('اسم المستخدم مستخدم بالفعل.');return;}
+ const c={id:'CB-'+Date.now(),name,username,password,active:true,permissions:{pay:document.getElementById('cbCanPay').checked,print:document.getElementById('cbCanPrint').checked,viewBalance:document.getElementById('cbCanViewBalance').checked,invoice:document.getElementById('cbCanInvoice').checked},createdAt:new Date().toISOString()};
+ data.cashiers.push(c);persist();['cbName','cbUser','cbPass'].forEach(id=>document.getElementById(id).value='');renderCashboxes();alert('تم إنشاء الصندوق على هذا الجهاز. هذه بيانات تجربة محلية وليست حسابًا مركزيًا بعد.');
+}
+function loginCashier(){
+ const u=document.getElementById('cbLoginUser').value.trim().toLowerCase(),p=document.getElementById('cbLoginPass').value;
+ const c=data.cashiers.find(x=>x.username.toLowerCase()===u&&x.password===p&&x.active!==false);
+ if(!c){alert('اسم المستخدم أو كلمة السر غير صحيحة، أو الحساب موقوف.');return;}
+ activeCashier=c;sessionStorage.setItem('waterDemoCashier',c.id);renderCashboxes();alert('تم فتح صندوق '+c.name+' للتجربة. عند تسجيل سند قبض سيظهر باسم هذا المحصّل.');
+}
+function logoutCashier(){activeCashier=null;sessionStorage.removeItem('waterDemoCashier');renderCashboxes();alert('تم إغلاق صندوق المحصّل.');}
+function renderCashboxes(){
+ const session=document.getElementById('cashboxSession'),list=document.getElementById('cashboxList');if(!session||!list)return;
+ if(!activeCashier){const saved=sessionStorage.getItem('waterDemoCashier');if(saved)activeCashier=data.cashiers.find(c=>c.id===saved)||null;}
+ session.innerHTML=activeCashier?`الصندوق المفتوح: <b>${esc(activeCashier.name)}</b> — المستخدم: ${esc(activeCashier.username)}<br>الصلاحيات: ${activeCashier.permissions.pay?'قبض':'لا قبض'}، ${activeCashier.permissions.print?'طباعة':'لا طباعة'}، ${activeCashier.permissions.viewBalance?'عرض المتأخرات':'لا عرض للمتأخرات'}، ${activeCashier.permissions.invoice?'إصدار فواتير':'لا إصدار فواتير'}`:'لا يوجد محصّل فاتحًا صندوقه الآن.';
+ list.innerHTML=data.cashiers.length?data.cashiers.map(c=>{const total=data.payments.filter(p=>p.cashierId===c.id).reduce((a,p)=>a+(Number(p.amount)||0),0);return `<div class="row"><span><b>${esc(c.name)}</b><br><small>المستخدم: ${esc(c.username)} · ${c.active===false?'موقوف':'نشط'}<br>المقبوضات: ${money(total)} ريال</small></span><div><button class="small-btn" onclick="toggleCashier('${c.id}')">${c.active===false?'تفعيل':'إيقاف'}</button> <button class="small-btn" onclick="resetCashierPassword('${c.id}')">تغيير السر</button></div></div>`}).join(''):'<div class="empty">لم تنشئ صناديق بعد.</div>';
+}
+function toggleCashier(id){const c=data.cashiers.find(x=>x.id===id);if(!c)return;c.active=c.active===false; if(activeCashier&&activeCashier.id===id&&c.active===false)logoutCashier();persist();renderCashboxes();}
+function resetCashierPassword(id){const c=data.cashiers.find(x=>x.id===id);if(!c)return;const p=prompt('أدخل كلمة السر التجريبية الجديدة (4 أحرف/أرقام على الأقل):');if(p===null)return;if(p.length<4){alert('كلمة السر قصيرة جدًا.');return;}c.password=p;persist();alert('تم تغيير كلمة السر التجريبية.');}
+
+loadData();persist();applyAppName();refreshExpenseCategoryControls();renderMos([]);
 </script>
 </body>
 </html>
