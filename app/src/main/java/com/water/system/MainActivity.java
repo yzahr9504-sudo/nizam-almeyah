@@ -150,4 +150,29 @@ public class MainActivity extends Activity {
             while(inv.moveToNext()) list.addView(text("فاتورة: "+inv.getInt(2)+" وحدة = "+inv.getInt(3)+" ريال بتاريخ "+inv.getString(4),14));
             inv.close();
             Cursor rec=db.rawQuery("SELECT amount,date FROM receipts WHERE subscriber_id=? ORDER BY id DESC",new String[]{String.valueOf(subId)});
-            while(rec.move
+while(rec.moveToNext()) list.addView(textLeft("قبض: "+rec.getInt(0)+" ريال - "+rec.getString(1),14));
+            rec.close();
+        }));
+    }
+
+    void showRecords(){
+        startPage("آخر السجلات");
+        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);mainLayout.addView(list);
+        Cursor c=db.rawQuery("SELECT i.units,i.amount,i.date,s.name,s.shop FROM invoices i JOIN subscribers s ON i.subscriber_id=s.id ORDER BY i.id DESC LIMIT 50",null);
+        while(c.moveToNext()){
+            int units=c.getInt(0);int amount=c.getInt(1);String date=c.getString(2);String name=c.getString(3);String shop=c.getString(4);
+            list.addView(textLeft(name+" - محل "+shop+": "+amount+" ريال ("+units+" وحدة) - "+date,14));
+        }
+        c.close();
+    }
+
+    void showSettings(){
+        startPage("الإعدادات");
+        EditText p=input("سعر وحدة الماء"); p.setText(String.valueOf(price)); mainLayout.addView(p);
+        mainLayout.addView(button("حفظ السعر",()->{
+            price=readInt(p);
+            getSharedPreferences("settings",MODE_PRIVATE).edit().putInt("price",price).apply();
+            msg("تم الحفظ");
+        }));
+    }
+}
