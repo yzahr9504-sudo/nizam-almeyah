@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام المياه</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f5f7;
+            margin: 0;
+            padding: 15px;
+            color: #222;
+        }
+
+        h1 {
+            text-align: center;
+            color: #087b45;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px #ddd;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+
+        input {
+            border: 1px solid #ccc;
+        }
+
+        button {
+            border: none;
+            background: #087b45;
+            color: white;
+            font-weight: bold;
+        }
+
+        .delete {
+            background: #c62828;
+        }
+
+        .subscriber {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>نظام المياه</h1>
+
+    <div class="card">
+        <h3>إضافة مشترك جديد</h3>
+
+        <input id="name" type="text" placeholder="اسم المشترك">
+
+        <input id="shop" type="text" placeholder="رقم المحل">
+
+        <input id="phone" type="tel" placeholder="رقم الهاتف">
+
+        <input id="previous" type="number"
+               placeholder="قراءة العداد السابقة">
+
+        <input id="current" type="number"
+               placeholder="قراءة العداد الحالية">
+
+        <button onclick="addSubscriber()">
+            حفظ المشترك
+        </button>
+    </div>
+
+    <div class="card">
+        <h3>قائمة المشتركين</h3>
+
+        <input id="search" type="text"
+               placeholder="ابحث بالاسم أو رقم المحل"
+               oninput="showSubscribers()">
+
+        <div id="list"></div>
+    </div>
+
+    <script>
+        let subscribers = JSON.parse(
+            localStorage.getItem("waterSubscribers") || "[]"
+        );
+
+        function saveData() {
+            localStorage.setItem(
+                "waterSubscribers",
+                JSON.stringify(subscribers)
+            );
+        }
+
+        function addSubscriber() {
+            const name = document.getElementById("name").value.trim();
+            const shop = document.getElementById("shop").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+            const previous = document.getElementById("previous").value;
+            const current = document.getElement
