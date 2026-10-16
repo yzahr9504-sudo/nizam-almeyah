@@ -1,26 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.water.system">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <application
-        android:allowBackup="true"
-        android:label="نظام المياه 5.19"
-        android:theme="@android:style/Theme.NoTitleBar">
-        
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:configChanges="orientation|keyboardHidden|screenSize">
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <application android:allowBackup="true" android:icon="@mipmap/ic_launcher" android:label="نظام المياه" android:usesCleartextTraffic="true">
+        <activity android:name=".MainActivity" android:exported="true" android:theme="@android:style/Theme.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
     </application>
-
 </manifest>
