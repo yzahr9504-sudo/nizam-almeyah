@@ -3,102 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام المياه 5.19 - صناديق المحصلين والنسخ الاحتياطي</title>
+<title>نظام المياه 5.19 - مسح الباركود بالكاميرا</title>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.3.20/dist/JsBarcode.all.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-*{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif}
-body{margin:0;background:#f1f5ff;color:#172033}
-.top{background:#7ec8e6;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:white;font-weight:bold}.brand{display:flex;align-items:center;gap:9px;min-width:0}.brand img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:9px;padding:3px}.brand-name{overflow-wrap:anywhere}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;max-width:760px;margin:auto}
-.card{background:white;padding:18px 8px;border-radius:16px;text-align:center;box-shadow:0 4px 12px #0001;cursor:pointer}
-.card b{font-size:13px}
-.view{display:none;max-width:760px;margin:10px auto;background:white;border-radius:12px;padding:12px}
-.btn{background:#2563eb;color:white;border:none;padding:12px;width:100%;border-radius:10px;font-weight:bold;margin-top:8px;cursor:pointer}
-.btn-green{background:#16a34a}
-.input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:6px 0;background:#fff}
-.row{display:flex;justify-content:space-between;gap:8px;padding:10px;border-bottom:1px solid #eee;align-items:center}
-.badge{background:#dcfce7;color:#166534;padding:4px 8px;border-radius:12px;font-size:11px;white-space:nowrap}
-.empty{text-align:center;color:#64748b;padding:24px 8px;background:#f8fafc;border-radius:10px;margin-top:8px}
-.small-btn{padding:6px 9px;border:0;border-radius:7px;cursor:pointer;margin-top:4px}
-@media(max-width:430px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:15px 6px}}
-@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;inset:0;padding:20px}}
+*{box-sizing:border-box;font-family:'Segoe UI',Tahoma;margin:0;padding:0}
+body{background:#eef3ff}
+.topbar{background:#f3f4f6;padding:14px 16px;display:flex;justify-content:space-between;font-weight:800}
+.banner{background:#6ec8ff;color:#fff;padding:18px;text-align:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px}
+.card{background:#fff;border-radius:18px;padding:18px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;border:2px solid transparent;min-height:95px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.card.active{border-color:#3b82f6;background:#e6f0ff}
+.card.green{border-color:#22c55e;background:#f0fdf4}
+.icon{font-size:30px;margin-bottom:6px}.label{font-weight:700;font-size:14px}.sub{font-size:12px;color:#666;margin-top:4px}
+.page{display:none;min-height:100vh;background:#eef3ff}.page.active{display:block}
+.page-header{background:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
+.btn-back{background:#f1f2f6;border:none;padding:7px 14px;border-radius:10px;font-weight:600}
+.white{background:#fff;border-radius:16px;padding:14px;margin:12px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.input{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;margin-bottom:10px;font-size:14px}
+.btn{border:none;padding:11px 16px;border-radius:12px;font-weight:700;color:#fff;margin:4px;cursor:pointer}
+.btn-green{background:#0bb350}.btn-blue{background:#2563eb}.btn-orange{background:#f59e0b}.btn-purple{background:#7c3aed}.btn-gray{background:#6b7280}.btn-dark{background:#0e8a6f}.btn-red{background:#ef4444}
+.flex{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.code-badge{background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800}
+.scan-box{border:2px dashed #3b82f6;border-radius:16px;padding:12px;background:#f0f8ff;margin:10px 0}
+.found-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:16px;padding:16px;margin-top:12px}
+#reader{width:100%;border-radius:12px;overflow:hidden}
 </style>
-<script id="googleIdentityScript" src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-<div id="home">
-  <div class="top"><div class="brand"><img id="appLogo" alt="شعار التطبيق" style="display:none"><span id="defaultLogo" aria-hidden="true" style="font-size:30px">💧</span><span class="brand-name">نظام المياه 5.19 — صناديق المحصلين والنسخ الاحتياطي</span></div><span>⚙️</span></div>
-  <div class="grid">
-    <div class="card" onclick="openV('tahseel')"><div>💰</div><b>سند قبض</b></div>
-    <div class="card" onclick="openV('sarf')"><div>💸</div><b>سند صرف</b></div>
-    <div class="card" onclick="openV('fawater')"><div>🧾</div><b>إصدار فواتير</b></div>
-    <div class="card" style="background:#e0f2fe;border:2px solid #0ea5e9" onclick="openV('moshtarakin')"><div>👥</div><b>خانة المشتركين</b><br><small id="homeCount">0 مشترك</small></div>
-    <div class="card" onclick="openV('sync')"><div>☁️⬆️</div><b>مزامنة البيانات</b></div>
-    <div class="card" onclick="openV('download')"><div>☁️⬇️</div><b>تحميل البيانات</b></div>
-    <div class="card" onclick="openV('kashf')"><div>📊</div><b>كشف حساب</b></div>
-    <div class="card" onclick="openV('settings')"><div>⚙️</div><b>الإعدادات</b></div>
-    <div class="card" onclick="openV('records')"><div>🗂️</div><b>آخر السجلات</b></div>
-    <div class="card" onclick="openV('adjustments')"><div>➖</div><b>تسوية / مبلغ بالسالب</b></div>
-    <div class="card" onclick="openV('bulk')"><div>📨</div><b>رسائل جماعية</b></div>
-    <div class="card" onclick="openV('reports')"><div>📈</div><b>تقارير الحسابات</b></div>
-    <div class="card" style="background:#dcfce7;border:2px solid #16a34a" onclick="openV('cashboxes')"><div>🔐</div><b>إدارة صناديق المحصّلين</b></div>
-  </div>
+
+<div id="main">
+<div class="topbar"><span>نظام المياه 5.19 - صناديق المح...</span><span>→</span></div>
+<div class="banner"><h2>نظام المياه 5.19 - صناديق المحصلين</h2><p>مسح الباركود بالكاميرا</p></div>
+<div class="grid">
+<div class="card" onclick="openP('sarf')"><div class="icon">💸</div><div class="label">سند صرف</div></div>
+<div class="card" onclick="openP('qabd')"><div class="icon">💰</div><div class="label">سند قبض</div></div>
+<div class="card active" onclick="openP('mosh')"><div class="icon">👥</div><div class="label">خانة المشتركين</div><div class="sub" id="dc">0 مشترك</div></div>
+<div class="card" onclick="openP('faw')"><div class="icon">🧾</div><div class="label">إصدار فواتير 600×</div><div class="sub">مسح باركود</div></div>
+<div class="card" onclick="openP('down')"><div class="icon">⬇️☁️</div><div class="label">تحميل البيانات</div></div>
+<div class="card" onclick="openP('sync')"><div class="icon">⬆️☁️</div><div class="label">مزامنة البيانات</div></div>
+<div class="card" onclick="openP('set')"><div class="icon">⚙️</div><div class="label">الإعدادات</div></div>
+<div class="card" onclick="openP('kashf')"><div class="icon">📊</div><div class="label">كشف حساب</div></div>
+<div class="card" onclick="openP('tas')"><div class="icon">➖</div><div class="label">تسوية</div></div>
+<div class="card" onclick="openP('sij')"><div class="icon">🗂️</div><div class="label">آخر السجلات</div></div>
+<div class="card" onclick="openP('taq')"><div class="icon">📈</div><div class="label">تقارير الحسابات</div></div>
+<div class="card" onclick="openP('ras')"><div class="icon">✉️</div><div class="label">رسائل جماعية</div></div>
+<div class="card green" style="grid-column:1/-1;max-width:50%;justify-self:end" onclick="openP('sand')"><div class="icon">🔐</div><div class="label">إدارة صناديق المحصلين</div></div>
+</div>
 </div>
 
-<div id="moshtarakin" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>👥 خانة المشتركين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <div style="display:flex;gap:6px;align-items:center">
-    <input id="searchMos" class="input" placeholder="🔍 بحث بالاسم أو رقم العداد/المحل" oninput="filterMos()" style="flex:1;min-width:0">
-    <button onclick="showAdd()" style="padding:10px 14px;background:#16a34a;color:white;border:none;border-radius:10px;white-space:nowrap">+ إضافة</button>
-  </div>
-  <div id="addForm" style="display:none;background:#f8fafc;padding:12px;border-radius:10px;margin:8px 0">
-    <input id="newName" class="input" placeholder="اسم المشترك">
-    <input id="newNo" class="input" placeholder="رقم العداد / المحل">
-    <input id="newArea" class="input" placeholder="المنطقة">
-    <input id="newPhone" class="input" type="tel" placeholder="رقم الهاتف">
-    <input id="newPrev" class="input" type="number" min="0" placeholder="القراءة السابقة" value="0">
-    <button class="btn btn-green" onclick="addMos()">💾 حفظ المشترك</button>
-    <button class="btn" style="background:#e5e7eb;color:#111" onclick="hideAdd()">إلغاء</button>
-  </div>
-  <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
-    <button class="btn" style="background:#0ea5e9;width:auto;padding:8px 12px;margin:0" onclick="exportExcel()">📥 تصدير CSV لبرنامج Excel</button>
-    <label class="btn" style="background:#f59e0b;width:auto;padding:8px 12px;margin:0;cursor:pointer"><input type="file" accept=".csv,.txt" hidden onchange="importCSV(event)">📤 استيراد CSV</label>
-    <label class="btn" style="background:#7c3aed;width:auto;padding:8px 12px;margin:0;cursor:pointer"><input type="file" accept="application/pdf,.pdf" hidden onchange="importPDFSubscribers(event)">📄 استيراد مشتركين PDF</label>
-    <button class="btn" style="background:#0f766e;width:auto;padding:8px 12px;margin:0" onclick="exportSubscribersPDF()">🖨️ تصدير المشتركين PDF</button>
-    <button class="btn" style="background:#64748b;width:auto;padding:8px 12px;margin:0" onclick="selectVisibleBarcodes(true)">☑ تحديد الظاهر</button>
-    <button class="btn" style="background:#64748b;width:auto;padding:8px 12px;margin:0" onclick="selectVisibleBarcodes(false)">☐ إلغاء التحديد</button>
-    <button class="btn" style="background:#7c3aed;width:auto;padding:8px 12px;margin:0" onclick="exportSelectedBarcodesPDF()">▦ تصدير المحدد PDF</button>
-    <button class="btn" style="background:#0f766e;width:auto;padding:8px 12px;margin:0" onclick="exportAllBarcodesPDF()">▦ تصدير الكل PDF</button>
-  </div>
-  <div id="barcodeSelectionCount" style="font-weight:bold;color:#6d28d9;margin:8px 0">الباركودات المحددة: 0</div><div id="mosList"></div>
-  <div id="qrModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeQR()"><div style="background:#fff;border-radius:14px;padding:18px;text-align:center;width:min(340px,100%)"><h3>باركود المشترك</h3><div id="qrSubscriberName"></div><div id="qrCanvas" style="display:flex;justify-content:center;margin:12px"></div><p id="qrSubscriberNo"></p><button class="btn" onclick="window.print()">🖨️ طباعة الباركود</button><button class="btn" style="background:#64748b" onclick="closeQR()">إغلاق</button></div></div>
-  <div id="mosCount" style="text-align:center;color:#666;margin:10px"></div>
+<div id="mosh" class="page">
+<div class="page-header"><button class="btn-back" onclick="openP('main')">← رجوع</button><b>👥 خانة المشتركين - مع الباركود</b></div>
+<div class="white">
+<div style="display:flex;gap:8px"><button class="btn btn-green" onclick="addM()">+ إضافة</button><input class="input" style="margin:0" id="sSearch" placeholder="بحث بالاسم أو الكود أو رقم العداد 🔍" oninput="render()"></div>
+<div class="flex" style="margin-top:10px"><button class="btn btn-orange" onclick="document.getElementById('csv').click()">استيراد CSV 📥</button><button class="btn btn-blue" onclick="expCSV()">تصدير CSV مع الكود 📤</button></div>
+<div class="flex"><button class="btn btn-gray" onclick="selAll()">☑ تحديد الظاهر</button><button class="btn btn-dark" onclick="printBarcodes()">🖨️ طباعة كل الباركودات</button></div>
+<div style="margin-top:12px;color:#7c3aed;font-weight:700">الباركودات المحددة: <span id="sel">0</span></div>
+<div id="list"></div>
+<div id="empty" style="text-align:center;color:#888;padding:20px;background:#f8f9ff;border-radius:12px;margin-top:10px">لا يوجد مشتركون حتى الآن.<br>اضغط «+ إضافة» لإضافة أول مشترك.<br><br><small>عرض <span id="c1">0</span> من <span id="c2">0</span> مشترك</small></div>
+</div>
 </div>
 
-<div id="fawater" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>إصدار فواتير</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <button class="btn" style="background:#7c3aed" onclick="startBarcodeScan()">▦ تصوير باركود المشترك بالكاميرا</button>
-  <input id="barcodePhoto" type="file" accept="image/*" capture="environment" style="display:none" onchange="readBarcodePhoto(event)">
-  <div id="scanPanel" style="display:none;margin:8px 0;padding:10px;background:#f8fafc;border-radius:10px"><div id="scanStatus" style="font-size:13px;margin:6px 0">سيتم فتح كاميرا الهاتف لتصوير الباركود؛ لا حاجة لمعاينة فيديو سوداء.</div></div>
-  <input id="fSearch" class="input" placeholder="ابحث برقم العداد أو اسم المشترك" oninput="fFilter()">
-  <div id="fList"></div>
-  <div id="fForm" style="display:none">
-    <div id="printArea">
-      <h3>فاتورة مياه</h3>
-      <p>المشترك: <b id="fName"></b></p>
-      <p>رقم العداد/المحل: <b id="fNo"></b></p>
-      <p>القراءة السابقة: <b id="fPrev"></b></p>
-      <label for="fCurr">القراءة الحالية</label>
-      <input id="fCurr" class="input" type="number" min="0" placeholder="أدخل القراءة الحالية">
-      <label>📷 تصوير العداد</label>
-      <button type="button" class="btn" style="background:#0f766e" onclick="openMeterCamera()">📸 فتح الكاميرا مباشرة لتصوير العداد</button>
-      <input id="meterPhoto" class="input" type="file" accept="image/*" capture="environment" onchange="previewMeterPhoto(event)" style="display:none">
-      <img id="meterPreview" alt="صورة العداد" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:6px 0">
-      <button class="btn" style="background:#0f766e" onclick="readMeterPhoto()">🔎 قراءة الأرقام من الصورة</button>
-      <div id="ocrStatus" style="font-size:13px;color:#64748b">التقط صورة واضحة للعداد. تُحفظ الصورة مع الفاتورة؛ قراءة الأرقام تلقائيًا تحتاج اتصالًا بالإنترنت.</div>
-      <button class="btn" onclick="calcF()">احسب الفاتورة</button>
-      <div id="fRes" style="font-size:18px;margin:10px 0"></div>
-    </div>
-    <button class="btn btn-green" onclick="saveInvoice()">💾 حفظ الفاتورة وتحديث القراءة</button>
-    <button class="btn" onclick="window.print()">🖨️ طباعة الفاتورة</button>
-  </div>
+<div id="faw" class="page">
+<div class="page-header"><button class="btn-back" onclick="openP('main')">← رجوع</button><b>إصدار فواتير - 600 ريال - مسح الباركود</b></div>
+<div class="white">
+<div class="scan-box">
+<h3 style="text-align:center;margin-bottom:10px">📷 تصوير باركود المشترك بالكاميرا</h3>
+<button id="scanBtn" class="btn btn-purple" style="width:100%;font-size:16px;padding:14px" onclick="startScan()">▦ افتح الكاميرا لمسح الباركود</button>
+<div id="reader" style="display:none;margin-top:12px"></div>
+<button id="stopBtn" class="btn btn-red" style="width:100%;display:none;margin-top:8px" onclick="stopScan()">⏹️ إيقاف الكاميرا</button>
+<p style="font-size:11px;color:#666;text-align:center;margin-top:8px">وجه الكاميرا إلى باركود المشترك المطبوع، سيظهر اسمه تلقائياً</p>
 </div>
+<div id="foundBox" class="found-box" style="display:none">
+<h3 style="color:#15803d">✅ تم العثور على المشترك</h3>
+<div style="display:flex;gap:8px;align-items:center;margin:12px 0">
+<span id="foundCode" class="code-badge" style="font-size:14px;padding:4px 12px"></span>
+<b id="foundName" style="font-size:18px"></b>
+</div>
+<div id="foundDetails" style="font-size:13px;color:#555;line-height:1.8"></div>
+<svg id="foundBarcode" style="margin-top:10px"></svg>
+<br>
+<label style="font-size:13px;font-weight:700;margin-top:12px;display:block">القراءة الحالية</label>
+<input class="input" id="reading" type="number" placeholder="أدخل قراءة العداد">
+<label style="font-size:13px;font-weight:700">القراءة السابقة: <span id="prevReading">0</span></label>
+<div style="background:#fff;padding:10px;border-radius:10px;margin:10px 0;text-align:center">
+<div>الاستهلاك: <b id="consumption">0</b> وحدة</div>
+<div style="font-size:18px;margin-top:6px">المبلغ: <b id="amount" style="color:#0bb350">0</b> ريال (600 × <span id="units">0</span>)</div>
+</div>
+<button class="btn btn-green" style="width:100%;padding:14px;font-size:16px" onclick="saveInvoice()">💾 حفظ الفاتورة</button>
+<button class="btn btn-blue" style="width:
