@@ -7,7 +7,10 @@
 <style>
 *{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif}
 body{margin:0;background:#f1f5ff;color:#172033}
-.top{background:#7ec8e6;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:white;font-weight:bold}.brand{display:flex;align-items:center;gap:9px;min-width:0}.brand img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:9px;padding:3px}.brand-name{overflow-wrap:anywhere}
+.top{background:#7ec8e6;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:white;font-weight:bold}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand img{width:42px;height:42px;object-fit:contain;background:#fff;border-radius:9px;padding:3px}
+.brand-name{overflow-wrap:anywhere}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;max-width:760px;margin:auto}
 .card{background:white;padding:18px 8px;border-radius:16px;text-align:center;box-shadow:0 4px 12px #0001;cursor:pointer}
 .card b{font-size:13px}
@@ -16,21 +19,19 @@ body{margin:0;background:#f1f5ff;color:#172033}
 .btn-green{background:#16a34a}
 .input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;margin:6px 0;background:#fff}
 .row{display:flex;justify-content:space-between;gap:8px;padding:10px;border-bottom:1px solid #eee;align-items:center}
-.badge{background:#dcfce7;color:#166534;padding:4px 8px;border-radius:12px;font-size:11px;white-space:nowrap}
+.badge{background:#dcfce7;color:#166534;padding:4px 8px;border-radius:12px;font-size:11px}
 .empty{text-align:center;color:#64748b;padding:24px 8px;background:#f8fafc;border-radius:10px;margin-top:8px}
-.small-btn{padding:6px 9px;border:0;border-radius:7px;cursor:pointer;margin-top:4px}
-@media(max-width:430px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:15px 6px}}
-@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;inset:0;padding:20px}}
+.small-btn{padding:6px 9px;border:0;border-radius:7px;cursor:pointer}
+@media(max-width:430px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
-<script id="googleIdentityScript" src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <div id="home">
-  <div class="top"><div class="brand"><img id="appLogo" alt="شعار التطبيق" style="display:none"><span id="defaultLogo" aria-hidden="true" style="font-size:30px">💧</span><span class="brand-name">نظام المياه 5.19 — صناديق المحصلين والنسخ الاحتياطي</span></div><span>⚙️</span></div>
+  <div class="top"><div class="brand"><span style="font-size:30px">💧</span><span class="brand-name">نظام المياه 5.19 — صناديق المحصلين والنسخ الاحتياطي</span></div><span onclick="openV('settings')">⚙️</span></div>
   <div class="grid">
     <div class="card" onclick="openV('tahseel')"><div>💰</div><b>سند قبض</b></div>
     <div class="card" onclick="openV('sarf')"><div>💸</div><b>سند صرف</b></div>
-    <div class="card" onclick="openV('fawater')"><div>🧾</div><b>إصدار فواتير ×600</b></div>
+    <div class="card" onclick="openV('fawater')"><div>🧾</div><b>إصدار فواتير</b></div>
     <div class="card" style="background:#e0f2fe;border:2px solid #0ea5e9" onclick="openV('moshtarakin')"><div>👥</div><b>خانة المشتركين</b><br><small id="homeCount">0 مشترك</small></div>
     <div class="card" onclick="openV('sync')"><div>☁️⬆️</div><b>مزامنة البيانات</b></div>
     <div class="card" onclick="openV('download')"><div>☁️⬇️</div><b>تحميل البيانات</b></div>
@@ -45,61 +46,35 @@ body{margin:0;background:#f1f5ff;color:#172033}
 </div>
 
 <div id="moshtarakin" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>👥 خانة المشتركين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <div style="display:flex;gap:6px;align-items:center">
-    <input id="searchMos" class="input" placeholder="🔍 بحث بالاسم أو رقم العداد/المحل" oninput="filterMos()" style="flex:1;min-width:0">
-    <button onclick="showAdd()" style="padding:10px 14px;background:#16a34a;color:white;border:none;border-radius:10px;white-space:nowrap">+ إضافة</button>
-  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>👥 خانة المشتركين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <input id="searchMos" class="input" placeholder="🔍 بحث بالاسم أو رقم العداد/المحل" oninput="filterMos()">
+  <button class="btn btn-green" onclick="showAdd()">+ إضافة مشترك</button>
   <div id="addForm" style="display:none;background:#f8fafc;padding:12px;border-radius:10px;margin:8px 0">
     <input id="newName" class="input" placeholder="اسم المشترك">
     <input id="newNo" class="input" placeholder="رقم العداد / المحل">
-    <input id="newArea" class="input" placeholder="المنطقة">
-    <input id="newPhone" class="input" type="tel" placeholder="رقم الهاتف">
-    <input id="newPrev" class="input" type="number" min="0" placeholder="القراءة السابقة" value="0">
-    <button class="btn btn-green" onclick="addMos()">💾 حفظ المشترك</button>
+    <input id="newPhone" class="input" placeholder="رقم الهاتف">
+    <input id="newPrev" class="input" type="number" placeholder="القراءة السابقة" value="0">
+    <button class="btn btn-green" onclick="addMos()">💾 حفظ</button>
     <button class="btn" style="background:#e5e7eb;color:#111" onclick="hideAdd()">إلغاء</button>
   </div>
-  <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
-    <button class="btn" style="background:#0ea5e9;width:auto;padding:8px 12px;margin:0" onclick="exportExcel()">📥 تصدير CSV لبرنامج Excel</button>
-    <label class="btn" style="background:#f59e0b;width:auto;padding:8px 12px;margin:0;cursor:pointer"><input type="file" accept=".csv,.txt" hidden onchange="importCSV(event)">📤 استيراد CSV</label>
-    <label class="btn" style="background:#7c3aed;width:auto;padding:8px 12px;margin:0;cursor:pointer"><input type="file" accept="application/pdf,.pdf" hidden onchange="importPDFSubscribers(event)">📄 استيراد مشتركين PDF</label>
-    <button class="btn" style="background:#0f766e;width:auto;padding:8px 12px;margin:0" onclick="exportSubscribersPDF()">🖨️ تصدير المشتركين PDF</button>
-    <button class="btn" style="background:#64748b;width:auto;padding:8px 12px;margin:0" onclick="selectVisibleBarcodes(true)">☑ تحديد الظاهر</button>
-    <button class="btn" style="background:#64748b;width:auto;padding:8px 12px;margin:0" onclick="selectVisibleBarcodes(false)">☐ إلغاء التحديد</button>
-    <button class="btn" style="background:#7c3aed;width:auto;padding:8px 12px;margin:0" onclick="exportSelectedBarcodesPDF()">▦ تصدير المحدد PDF</button>
-    <button class="btn" style="background:#0f766e;width:auto;padding:8px 12px;margin:0" onclick="exportAllBarcodesPDF()">▦ تصدير الكل PDF</button>
-  </div>
-  <div id="barcodeSelectionCount" style="font-weight:bold;color:#6d28d9;margin:8px 0">الباركودات المحددة: 0</div><div id="mosList"></div>
-  <div id="qrModal" style="display:none;position:fixed;inset:0;background:#0008;z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeQR()"><div style="background:#fff;border-radius:14px;padding:18px;text-align:center;width:min(340px,100%)"><h3>باركود المشترك</h3><div id="qrSubscriberName"></div><div id="qrCanvas" style="display:flex;justify-content:center;margin:12px"></div><p id="qrSubscriberNo"></p><button class="btn" onclick="window.print()">🖨️ طباعة الباركود</button><button class="btn" style="background:#64748b" onclick="closeQR()">إغلاق</button></div></div>
+  <div id="mosList"></div>
   <div id="mosCount" style="text-align:center;color:#666;margin:10px"></div>
 </div>
 
 <div id="fawater" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>إصدار فواتير - 600 ريال للوحدة</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <button class="btn" style="background:#7c3aed" onclick="startBarcodeScan()">▦ تصوير باركود المشترك بالكاميرا</button>
-  <input id="barcodePhoto" type="file" accept="image/*" capture="environment" style="display:none" onchange="readBarcodePhoto(event)">
-  <div id="scanPanel" style="display:none;margin:8px 0;padding:10px;background:#f8fafc;border-radius:10px"><div id="scanStatus" style="font-size:13px;margin:6px 0">سيتم فتح كاميرا الهاتف لتصوير الباركود؛ لا حاجة لمعاينة فيديو سوداء.</div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>إصدار فواتير</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
   <input id="fSearch" class="input" placeholder="ابحث برقم العداد أو اسم المشترك" oninput="fFilter()">
   <div id="fList"></div>
   <div id="fForm" style="display:none">
     <div id="printArea">
-      <h3>فاتورة مياه</h3>
       <p>المشترك: <b id="fName"></b></p>
       <p>رقم العداد/المحل: <b id="fNo"></b></p>
       <p>القراءة السابقة: <b id="fPrev"></b></p>
-      <label for="fCurr">القراءة الحالية</label>
-      <input id="fCurr" class="input" type="number" min="0" placeholder="أدخل القراءة الحالية">
-      <label>📷 تصوير العداد</label>
-      <button type="button" class="btn" style="background:#0f766e" onclick="openMeterCamera()">📸 فتح الكاميرا مباشرة لتصوير العداد</button>
-      <input id="meterPhoto" class="input" type="file" accept="image/*" capture="environment" onchange="previewMeterPhoto(event)" style="display:none">
-      <img id="meterPreview" alt="صورة العداد" style="display:none;max-width:100%;max-height:220px;border-radius:10px;margin:6px 0">
-      <button class="btn" style="background:#0f766e" onclick="readMeterPhoto()">🔎 قراءة الأرقام من الصورة</button>
-      <div id="ocrStatus" style="font-size:13px;color:#64748b">التقط صورة واضحة للعداد. تُحفظ الصورة مع الفاتورة؛ قراءة الأرقام تلقائيًا تحتاج اتصالًا بالإنترنت.</div>
-      <button class="btn" onclick="calcF()">احسب الفاتورة ×600</button>
-      <div id="fRes" style="font-size:18px;margin:10px 0"></div>
+      <input id="fCurr" class="input" type="number" placeholder="القراءة الحالية">
+      <button class="btn" onclick="calcF()">احسب الفاتورة</button>
+      <div id="fRes" style="font-size:18px;margin:10px 0;font-weight:bold"></div>
     </div>
-    <button class="btn btn-green" onclick="saveInvoice()">💾 حفظ الفاتورة وتحديث القراءة</button>
-    <button class="btn" onclick="window.print()">🖨️ طباعة الفاتورة</button>
+    <button class="btn btn-green" onclick="saveInvoice()">💾 حفظ الفاتورة</button>
   </div>
 </div>
 
@@ -108,19 +83,215 @@ body{margin:0;background:#f1f5ff;color:#172033}
   <input id="pSearch" class="input" placeholder="ابحث بالاسم أو رقم العداد" oninput="pFilter()">
   <div id="pList"></div>
   <div id="pForm" style="display:none">
-    <p>المشترك: <b id="pName"></b></p><p>المتأخرات الحالية: <b id="pBalance"></b> ريال</p>
-    <input id="pAmount" class="input" type="number" min="1" placeholder="مبلغ القبض">
-    <input id="pNote" class="input" placeholder="ملاحظات (اختياري)">
+    <p>المشترك: <b id="pName"></b></p><p>المتأخرات: <b id="pBalance"></b> ريال</p>
+    <input id="pAmount" class="input" type="number" placeholder="مبلغ القبض">
     <button class="btn btn-green" onclick="savePayment()">حفظ سند القبض</button>
-    <div id="pResult"></div>
   </div>
 </div>
 
-<div id="sarf" class="view">
-  <div style="display:flex;justify-content:space-between;align-items:center"><h3>💸 سند صرف</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
-  <input id="sarfAmount" class="input" type="number" min="1" placeholder="مبلغ الصرف">
-  <input id="sarfNote" class="input" placeholder="بيان الصرف">
-  <label>تصنيف المصروف</label><select id="sarfCategory" class="input"><option>صيانة</option><option>كهرباء</option><option>وقود</option><option>رواتب</option><option>مستلزمات</option><option>نقل</option><option>أخرى</option></select>
-  <button class="btn" onclick="saveSarf()">حفظ سند الصرف</button>
-  <div id="sarfList"></div>
+<div id="kashf" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>📊 كشف حساب</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <input id="kSearch" class="input" placeholder="ابحث بالاسم أو رقم العداد" oninput="kFilter()">
+  <div id="kList"></div>
 </div>
+
+<div id="records" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>🗂️ آخر السجلات</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div id="rList"></div>
+</div>
+
+<div id="reports" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>📈 تقارير الحسابات</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div id="reportBox"></div>
+</div>
+
+<div id="settings" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>⚙️ الإعدادات</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <label>سعر الوحدة (مخفي عن العملاء)</label>
+  <input id="setPrice" class="input" type="number" value="600">
+  <button class="btn btn-green" onclick="saveSettings()">حفظ الإعدادات</button>
+</div>
+
+<div id="cashboxes" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h3>🔐 إدارة صناديق المحصلين</h3><button onclick="goHome()" class="small-btn">⬅ رجوع</button></div>
+  <div style="background:#fff3cd;padding:10px;border-radius:10px;font-size:13px">تنبيه تجربة: تحفظ بيانات الصناديق على هذا الجهاز فقط.</div>
+  <h4>➕ إنشاء صندوق محصل</h4>
+  <input id="colName" class="input" placeholder="اسم المحصل">
+  <input id="colUser" class="input" placeholder="اسم المستخدم">
+  <input id="colPass" class="input" placeholder="كلمة السر">
+  <label><input type="checkbox" id="p1" checked> السماح بتسجيل سند قبض</label><br>
+  <label><input type="checkbox" id="p2" checked> السماح بطباعة السند</label><br>
+  <label><input type="checkbox" id="p3" checked> السماح بعرض المتأخرات</label><br>
+  <label><input type="checkbox" id="p4"> السماح بإصدار الفواتير</label><br>
+  <button class="btn btn-green" onclick="saveCollector()">حفظ صندوق المحصل</button>
+  <h4>🔑 فتح صندوق</h4>
+  <input id="loginUser" class="input" placeholder="اسم المستخدم">
+  <input id="loginPass" class="input" placeholder="كلمة السر">
+  <button class="btn" onclick="openCollector()">فتح الصندوق</button>
+  <button class="btn" style="background:#64748b" onclick="closeCollector()">إغلاق الصندوق</button>
+  <div id="colList"></div>
+</div>
+
+<script>
+let subs = JSON.parse(localStorage.getItem('subs')||'[]');
+let invoices = JSON.parse(localStorage.getItem('invoices')||'[]');
+let receipts = JSON.parse(localStorage.getItem('receipts')||'[]');
+let collectors = JSON.parse(localStorage.getItem('collectors')||'[]');
+let price = parseInt(localStorage.getItem('price')||'600');
+let curSub = null;
+
+function saveAll(){
+  localStorage.setItem('subs',JSON.stringify(subs));
+  localStorage.setItem('invoices',JSON.stringify(invoices));
+  localStorage.setItem('receipts',JSON.stringify(receipts));
+  localStorage.setItem('collectors',JSON.stringify(collectors));
+  localStorage.setItem('price',price);
+  document.getElementById('homeCount').innerText = subs.length+' مشترك';
+}
+function openV(id){
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById('home').style.display='none';
+  document.getElementById(id).style.display='block';
+  if(id=='moshtarakin') filterMos();
+  if(id=='records') showRecords();
+  if(id=='reports') showReports();
+  if(id=='cashboxes') renderCollectors();
+}
+function goHome(){
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById('home').style.display='block';
+  saveAll();
+}
+function showAdd(){document.getElementById('addForm').style.display='block';}
+function hideAdd(){document.getElementById('addForm').style.display='none';}
+function addMos(){
+  let name=document.getElementById('newName').value.trim();
+  let no=document.getElementById('newNo').value.trim();
+  let phone=document.getElementById('newPhone').value.trim();
+  let prev=parseInt(document.getElementById('newPrev').value)||0;
+  if(!name||!no){alert('ادخل الاسم ورقم العداد');return;}
+  subs.push({id:Date.now(),name,no,phone,prev});
+  saveAll(); hideAdd(); filterMos();
+  document.getElementById('newName').value='';document.getElementById('newNo').value='';
+}
+function filterMos(){
+  let q=document.getElementById('searchMos').value.toLowerCase();
+  let list=document.getElementById('mosList'); list.innerHTML='';
+  let filtered=subs.filter(s=>s.name.toLowerCase().includes(q)||s.no.toLowerCase().includes(q));
+  filtered.forEach(s=>{
+    let bal=getBalance(s.id);
+    let d=document.createElement('div'); d.className='row';
+    d.innerHTML=`<div><b>${s.name}</b> - محل ${s.no}<br><small>المتبقي: ${bal} ريال</small></div><div><button class="small-btn" onclick="delSub(${s.id})">🗑️</button></div>`;
+    list.appendChild(d);
+  });
+  document.getElementById('mosCount').innerText=filtered.length+' مشترك';
+}
+function delSub(id){if(confirm('حذف؟')){subs=subs.filter(s=>s.id!=id);saveAll();filterMos();}}
+function getBalance(subId){
+  let sub=subs.find(s=>s.id==subId); if(!sub) return 0;
+  let inv=invoices.filter(i=>i.subId==subId).reduce((a,b)=>a+b.amount,0);
+  let rec=receipts.filter(r=>r.subId==subId).reduce((a,b)=>a+b.amount,0);
+  return sub.prev+inv-rec;
+}
+function fFilter(){
+  let q=document.getElementById('fSearch').value.toLowerCase();
+  let list=document.getElementById('fList'); list.innerHTML='';
+  if(!q) return;
+  let f=subs.filter(s=>s.name.toLowerCase().includes(q)||s.no.toLowerCase().includes(q)).slice(0,5);
+  f.forEach(s=>{
+    let d=document.createElement('div'); d.className='btn'; d.style.background='#e5e7eb'; d.style.color='#111';
+    d.innerText=s.name+' - '+s.no; d.onclick=()=>{curSub=s;document.getElementById('fName').innerText=s.name;document.getElementById('fNo').innerText=s.no;let last=invoices.filter(i=>i.subId==s.id).sort((a,b)=>b.id-a.id)[0];document.getElementById('fPrev').innerText=last?last.newReading:s.prev;document.getElementById('fForm').style.display='block';};
+    list.appendChild(d);
+  });
+}
+function calcF(){
+  let prev=parseInt(document.getElementById('fPrev').innerText)||0;
+  let curr=parseInt(document.getElementById('fCurr').value)||0;
+  if(curr<prev){alert('القراءة الحالية أقل');return;}
+  let units=curr-prev;
+  let amount=units*price;
+  document.getElementById('fRes').innerText=`الاستهلاك: ${units} وحدة - المبلغ: ${amount} ريال`;
+  document.getElementById('fRes').dataset.amount=amount;
+  document.getElementById('fRes').dataset.units=units;
+}
+function saveInvoice(){
+  let amount=parseInt(document.getElementById('fRes').dataset.amount)||0;
+  let units=parseInt(document.getElementById('fRes').dataset.units)||0;
+  if(amount<=0&&units!=0){alert('احسب أولاً');return;}
+  let prev=parseInt(document.getElementById('fPrev').innerText)||0;
+  let curr=parseInt(document.getElementById('fCurr').value)||0;
+  invoices.push({id:Date.now(),subId:curSub.id,oldReading:prev,newReading:curr,units,amount,date:new Date().toISOString().slice(0,10)});
+  saveAll(); alert('تم حفظ الفاتورة: '+amount+' ريال'); document.getElementById('fForm').style.display='none'; document.getElementById('fCurr').value='';
+}
+function pFilter(){
+  let q=document.getElementById('pSearch').value.toLowerCase();
+  let list=document.getElementById('pList'); list.innerHTML='';
+  if(!q) return;
+  let f=subs.filter(s=>s.name.toLowerCase().includes(q)||s.no.toLowerCase().includes(q));
+  f.forEach(s=>{
+    let d=document.createElement('div'); d.className='btn'; d.style.background='#e5e7eb'; d.style.color='#111';
+    d.innerText=s.name+' - '+s.no+' - المتبقي: '+getBalance(s.id); d.onclick=()=>{curSub=s;document.getElementById('pName').innerText=s.name;document.getElementById('pBalance').innerText=getBalance(s.id);document.getElementById('pForm').style.display='block';};
+    list.appendChild(d);
+  });
+}
+function savePayment(){
+  let amt=parseInt(document.getElementById('pAmount').value)||0;
+  if(amt<=0){alert('ادخل المبلغ');return;}
+  receipts.push({id:Date.now(),subId:curSub.id,amount:amt,date:new Date().toISOString().slice(0,10)});
+  saveAll(); alert('تم حفظ القبض'); document.getElementById('pForm').style.display='none'; document.getElementById('pAmount').value='';
+}
+function kFilter(){
+  let q=document.getElementById('kSearch').value.toLowerCase();
+  let list=document.getElementById('kList'); list.innerHTML='';
+  if(!q) return;
+  let f=subs.filter(s=>s.name.toLowerCase().includes(q)||s.no.toLowerCase().includes(q));
+  f.forEach(s=>{
+    let invs=invoices.filter(i=>i.subId==s.id);
+    let recs=receipts.filter(r=>r.subId==s.id);
+    let html=`<div style="background:#f8fafc;padding:10px;border-radius:10px;margin:6px 0"><b>${s.name} - ${s.no}</b><br>المتبقي: ${getBalance(s.id)} ريال<br>`;
+    invs.forEach(i=>html+=`فاتورة: ${i.amount} ريال - ${i.date}<br>`);
+    recs.forEach(r=>html+=`قبض: ${r.amount} ريال - ${r.date}<br>`);
+    html+=`</div>`;
+    list.innerHTML+=html;
+  });
+}
+function showRecords(){
+  let list=document.getElementById('rList'); list.innerHTML='';
+  invoices.slice(-100).reverse().forEach(i=>{
+    let s=subs.find(x=>x.id==i.subId);
+    list.innerHTML+=`<div class="row"><div>${s?s.name:''} - ${i.amount} ريال - ${i.date}</div></div>`;
+  });
+}
+function showReports(){
+  let totalInv=invoices.reduce((a,b)=>a+b.amount,0);
+  let totalRec=receipts.reduce((a,b)=>a+b.amount,0);
+  document.getElementById('reportBox').innerHTML=`<div>إجمالي الفواتير: ${totalInv} ريال</div><div>إجمالي المقبوضات: ${totalRec} ريال</div><div><b>المتبقي: ${totalInv-totalRec} ريال</b></div>`;
+}
+function saveSettings(){
+  price=parseInt(document.getElementById('setPrice').value)||600;
+  saveAll(); alert('تم حفظ الإعدادات');
+}
+function saveCollector(){
+  let name=document.getElementById('colName').value.trim();
+  let user=document.getElementById('colUser').value.trim();
+  let pass=document.getElementById('colPass').value.trim();
+  if(!name||!user){alert('ادخل اسم المحصل واسم المستخدم');return;}
+  collectors.push({id:Date.now(),name,username:user,password:pass,is_open:false});
+  saveAll(); renderCollectors(); alert('تم الحفظ');
+}
+function renderCollectors(){
+  let list=document.getElementById('colList'); list.innerHTML='';
+  collectors.forEach(c=>{list.innerHTML+=`<div class="row"><div>${c.name} (${c.username}) ${c.is_open?'[مفتوح]':''}</div></div>`;});
+}
+function openCollector(){
+  let u=document.getElementById('loginUser').value.trim();
+  let p=document.getElementById('loginPass').value.trim();
+  let c=collectors.find(x=>x.username==u&&x.password==p);
+  if(c){collectors.forEach(x=>x.is_open=false);c.is_open=true;saveAll();alert('تم فتح صندوق: '+c.name);goHome();}
+  else alert('بيانات خاطئة');
+}
+function closeCollector(){collectors.forEach(x=>x.is_open=false);saveAll();alert('تم الإغلاق');renderCollectors();}
+saveAll();
+</script>
+</body>
+</html>
