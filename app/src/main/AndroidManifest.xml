@@ -1,39 +1,37 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"><!-- الاتصال بالإنترنت -->
+<uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- السماح بالاتصال بالإنترنت -->
-    <uses-permission android:name="android.permission.INTERNET" />
+<!-- الكاميرا لقراءة الباركود -->
+<uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- السماح باستخدام الكاميرا لقراءة الباركود -->
-    <uses-permission android:name="android.permission.CAMERA" />
+<!-- الوصول إلى الملفات القديمة عند الحاجة -->
+<uses-permission
+    android:name="android.permission.READ_EXTERNAL_STORAGE"
+    android:maxSdkVersion="32" />
 
-    <!-- السماح بقراءة الملفات والوسائط عند الحاجة -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
+<uses-feature
+    android:name="android.hardware.camera"
+    android:required="false" />
 
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
+<application
+    android:allowBackup="true"
+    android:usesCleartextTraffic="true"
+    android:label="نظام المياه"
+    android:supportsRtl="true"
+    android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
-    <application
-        android:allowBackup="true"
-        android:usesCleartextTraffic="true"
-        android:label="نظام المياه"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    <activity
+        android:name=".MainActivity"
+        android:exported="true"
+        android:configChanges="orientation|screenSize|keyboardHidden">
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+    </activity>
 
-        </activity>
-
-    </application>
+</application>
 
 </manifest>
