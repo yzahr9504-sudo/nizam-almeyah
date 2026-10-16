@@ -2,93 +2,399 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام المياه 5.19 - مسح الباركود بالكاميرا</title>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.3.20/dist/JsBarcode.all.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>نظام المياه 5.20 - إصلاح الفتح</title>
 <style>
-*{box-sizing:border-box;font-family:'Segoe UI',Tahoma;margin:0;padding:0}
-body{background:#eef3ff}
-.topbar{background:#f3f4f6;padding:14px 16px;display:flex;justify-content:space-between;font-weight:800}
+*{box-sizing:border-box;font-family:'Segoe UI',Tahoma,Arial;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#eef3ff;touch-action:manipulation}
+.topbar{background:#f3f4f6;padding:14px 16px;display:flex;justify-content:space-between;font-weight:800;font-size:14px}
 .banner{background:#6ec8ff;color:#fff;padding:18px;text-align:center}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px}
-.card{background:#fff;border-radius:18px;padding:18px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;border:2px solid transparent;min-height:95px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.card.active{border-color:#3b82f6;background:#e6f0ff}
+.card{background:#fff;border-radius:18px;padding:18px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;border:3px solid transparent;min-height:95px;display:flex;flex-direction:column;align-items:center;justify-content:center;user-select:none}
+.card:active{transform:scale(0.97);background:#e6f0ff}
 .card.green{border-color:#22c55e;background:#f0fdf4}
-.icon{font-size:30px;margin-bottom:6px}.label{font-weight:700;font-size:14px}.sub{font-size:12px;color:#666;margin-top:4px}
-.page{display:none;min-height:100vh;background:#eef3ff}.page.active{display:block}
-.page-header{background:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee}
-.btn-back{background:#f1f2f6;border:none;padding:7px 14px;border-radius:10px;font-weight:600}
+.icon{font-size:32px;margin-bottom:6px}.label{font-weight:800;font-size:15px}.sub{font-size:12px;color:#666;margin-top:4px}
+.page{display:none;min-height:100vh;background:#eef3ff;position:fixed;top:0;left:0;right:0;bottom:0;overflow:auto;z-index:10}
+.page.active{display:block}
+.page-header{background:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;position:sticky;top:0;z-index:5}
+.btn-back{background:#f1f2f6;border:none;padding:8px 16px;border-radius:10px;font-weight:700;font-size:14px}
 .white{background:#fff;border-radius:16px;padding:14px;margin:12px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
-.input{width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:12px;margin-bottom:10px;font-size:14px}
-.btn{border:none;padding:11px 16px;border-radius:12px;font-weight:700;color:#fff;margin:4px;cursor:pointer}
+.input{width:100%;padding:13px;border:1.5px solid #e5e7eb;border-radius:12px;margin-bottom:10px;font-size:14px}
+.btn{border:none;padding:12px 16px;border-radius:12px;font-weight:800;color:#fff;margin:4px;cursor:pointer;font-size:14px}
 .btn-green{background:#0bb350}.btn-blue{background:#2563eb}.btn-orange{background:#f59e0b}.btn-purple{background:#7c3aed}.btn-gray{background:#6b7280}.btn-dark{background:#0e8a6f}.btn-red{background:#ef4444}
 .flex{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.code-badge{background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800}
+.code-badge{background:#e0f2fe;color:#0369a1;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:900}
 .scan-box{border:2px dashed #3b82f6;border-radius:16px;padding:12px;background:#f0f8ff;margin:10px 0}
 .found-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:16px;padding:16px;margin-top:12px}
-#reader{width:100%;border-radius:12px;overflow:hidden}
+#reader{width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:200px}
 </style>
 </head>
 <body>
 
 <div id="main">
-<div class="topbar"><span>نظام المياه 5.19 - صناديق المح...</span><span>→</span></div>
-<div class="banner"><h2>نظام المياه 5.19 - صناديق المحصلين</h2><p>مسح الباركود بالكاميرا</p></div>
+<div class="topbar"><span>نظام المياه 5.20</span><span>→</span></div>
+<div class="banner"><h2>نظام المياه 5.20</h2><p>تم إصلاح فتح الخانات</p></div>
 <div class="grid">
-<div class="card" onclick="openP('sarf')"><div class="icon">💸</div><div class="label">سند صرف</div></div>
-<div class="card" onclick="openP('qabd')"><div class="icon">💰</div><div class="label">سند قبض</div></div>
-<div class="card active" onclick="openP('mosh')"><div class="icon">👥</div><div class="label">خانة المشتركين</div><div class="sub" id="dc">0 مشترك</div></div>
-<div class="card" onclick="openP('faw')"><div class="icon">🧾</div><div class="label">إصدار فواتير 600×</div><div class="sub">مسح باركود</div></div>
-<div class="card" onclick="openP('down')"><div class="icon">⬇️☁️</div><div class="label">تحميل البيانات</div></div>
-<div class="card" onclick="openP('sync')"><div class="icon">⬆️☁️</div><div class="label">مزامنة البيانات</div></div>
-<div class="card" onclick="openP('set')"><div class="icon">⚙️</div><div class="label">الإعدادات</div></div>
-<div class="card" onclick="openP('kashf')"><div class="icon">📊</div><div class="label">كشف حساب</div></div>
-<div class="card" onclick="openP('tas')"><div class="icon">➖</div><div class="label">تسوية</div></div>
-<div class="card" onclick="openP('sij')"><div class="icon">🗂️</div><div class="label">آخر السجلات</div></div>
-<div class="card" onclick="openP('taq')"><div class="icon">📈</div><div class="label">تقارير الحسابات</div></div>
-<div class="card" onclick="openP('ras')"><div class="icon">✉️</div><div class="label">رسائل جماعية</div></div>
-<div class="card green" style="grid-column:1/-1;max-width:50%;justify-self:end" onclick="openP('sand')"><div class="icon">🔐</div><div class="label">إدارة صناديق المحصلين</div></div>
+<div class="card" onclick="openPage('sarf')"><div class="icon">💸</div><div class="label">سند صرف</div></div>
+<div class="card" onclick="openPage('qabd')"><div class="icon">💰</div><div class="label">سند قبض</div></div>
+<div class="card" onclick="openPage('mosh')" style="border-color:#3b82f6;background:#e6f0ff"><div class="icon">👥</div><div class="label">خانة المشتركين</div><div class="sub" id="dc">0 مشترك</div></div>
+<div class="card" onclick="openPage('faw')" style="border-color:#7c3aed"><div class="icon">🧾</div><div class="label">إصدار فواتير 600×</div><div class="sub">مسح باركود</div></div>
+<div class="card" onclick="openPage('down')"><div class="icon">⬇️☁️</div><div class="label">تحميل البيانات</div></div>
+<div class="card" onclick="openPage('sync')"><div class="icon">⬆️☁️</div><div class="label">مزامنة البيانات</div></div>
+<div class="card" onclick="openPage('set')"><div class="icon">⚙️</div><div class="label">الإعدادات</div></div>
+<div class="card" onclick="openPage('kashf')"><div class="icon">📊</div><div class="label">كشف حساب</div></div>
+<div class="card" onclick="openPage('tas')"><div class="icon">➖</div><div class="label">تسوية</div></div>
+<div class="card" onclick="openPage('sij')"><div class="icon">🗂️</div><div class="label">آخر السجلات</div></div>
+<div class="card" onclick="openPage('taq')"><div class="icon">📈</div><div class="label">تقارير الحسابات</div></div>
+<div class="card" onclick="openPage('ras')"><div class="icon">✉️</div><div class="label">رسائل جماعية</div></div>
+<div class="card green" style="grid-column:1/-1;max-width:50%;justify-self:end" onclick="openPage('sand')"><div class="icon">🔐</div><div class="label">إدارة صناديق المحصلين</div></div>
 </div>
 </div>
 
 <div id="mosh" class="page">
-<div class="page-header"><button class="btn-back" onclick="openP('main')">← رجوع</button><b>👥 خانة المشتركين - مع الباركود</b></div>
+<div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>👥 خانة المشتركين</b></div>
 <div class="white">
-<div style="display:flex;gap:8px"><button class="btn btn-green" onclick="addM()">+ إضافة</button><input class="input" style="margin:0" id="sSearch" placeholder="بحث بالاسم أو الكود أو رقم العداد 🔍" oninput="render()"></div>
-<div class="flex" style="margin-top:10px"><button class="btn btn-orange" onclick="document.getElementById('csv').click()">استيراد CSV 📥</button><button class="btn btn-blue" onclick="expCSV()">تصدير CSV مع الكود 📤</button></div>
-<div class="flex"><button class="btn btn-gray" onclick="selAll()">☑ تحديد الظاهر</button><button class="btn btn-dark" onclick="printBarcodes()">🖨️ طباعة كل الباركودات</button></div>
-<div style="margin-top:12px;color:#7c3aed;font-weight:700">الباركودات المحددة: <span id="sel">0</span></div>
+<div style="display:flex;gap:8px"><button class="btn btn-green" onclick="addM()">+ إضافة</button><input class="input" style="margin:0" id="sSearch" placeholder="بحث بالاسم أو الكود 🔍" oninput="render()"></div>
+<div class="flex" style="margin-top:10px"><button class="btn btn-orange" onclick="document.getElementById('csv').click()">استيراد 📥</button><button class="btn btn-blue" onclick="expCSV()">تصدير مع الكود 📤</button></div>
+<div class="flex"><button class="btn btn-gray" onclick="selAll()">☑ تحديد</button><button class="btn btn-dark" onclick="printBarcodes()">🖨️ طباعة الباركودات</button></div>
+<div style="margin-top:12px;color:#7c3aed;font-weight:700">المحدد: <span id="sel">0</span> | الكل: <span id="c2">0</span> | الظاهر: <span id="c1">0</span></div>
 <div id="list"></div>
-<div id="empty" style="text-align:center;color:#888;padding:20px;background:#f8f9ff;border-radius:12px;margin-top:10px">لا يوجد مشتركون حتى الآن.<br>اضغط «+ إضافة» لإضافة أول مشترك.<br><br><small>عرض <span id="c1">0</span> من <span id="c2">0</span> مشترك</small></div>
+<div id="empty" style="text-align:center;color:#888;padding:20px;background:#f8f9ff;border-radius:12px;margin-top:10px">لا يوجد مشتركون<br>اضغط + إضافة</div>
 </div>
 </div>
 
 <div id="faw" class="page">
-<div class="page-header"><button class="btn-back" onclick="openP('main')">← رجوع</button><b>إصدار فواتير - 600 ريال - مسح الباركود</b></div>
+<div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>إصدار فواتير 600 - مسح الباركود</b></div>
 <div class="white">
 <div class="scan-box">
 <h3 style="text-align:center;margin-bottom:10px">📷 تصوير باركود المشترك بالكاميرا</h3>
 <button id="scanBtn" class="btn btn-purple" style="width:100%;font-size:16px;padding:14px" onclick="startScan()">▦ افتح الكاميرا لمسح الباركود</button>
 <div id="reader" style="display:none;margin-top:12px"></div>
 <button id="stopBtn" class="btn btn-red" style="width:100%;display:none;margin-top:8px" onclick="stopScan()">⏹️ إيقاف الكاميرا</button>
-<p style="font-size:11px;color:#666;text-align:center;margin-top:8px">وجه الكاميرا إلى باركود المشترك المطبوع، سيظهر اسمه تلقائياً</p>
+<p id="camStatus" style="font-size:11px;color:#666;text-align:center;margin-top:8px">إذا لم تعمل الكاميرا، استخدم البحث اليدوي بالأسفل</p>
 </div>
 <div id="foundBox" class="found-box" style="display:none">
 <h3 style="color:#15803d">✅ تم العثور على المشترك</h3>
-<div style="display:flex;gap:8px;align-items:center;margin:12px 0">
-<span id="foundCode" class="code-badge" style="font-size:14px;padding:4px 12px"></span>
+<div style="display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap">
+<span id="foundCode" class="code-badge" style="font-size:14px;padding:6px 12px"></span>
 <b id="foundName" style="font-size:18px"></b>
 </div>
 <div id="foundDetails" style="font-size:13px;color:#555;line-height:1.8"></div>
-<svg id="foundBarcode" style="margin-top:10px"></svg>
-<br>
-<label style="font-size:13px;font-weight:700;margin-top:12px;display:block">القراءة الحالية</label>
-<input class="input" id="reading" type="number" placeholder="أدخل قراءة العداد">
+<div id="foundBarcodeBox" style="text-align:center;margin:10px 0;background:#fff;padding:10px;border-radius:10px">
+<svg id="foundBarcode"></svg>
+<br><small id="foundCodeText" style="font-weight:800"></small>
+</div>
+<label style="font-size:13px;font-weight:700;margin-top:12px;display:block">القراءة الحالية *</label>
+<input class="input" id="reading" type="number" placeholder="أدخل قراءة العداد" inputmode="numeric">
 <label style="font-size:13px;font-weight:700">القراءة السابقة: <span id="prevReading">0</span></label>
-<div style="background:#fff;padding:10px;border-radius:10px;margin:10px 0;text-align:center">
+<div style="background:#fff;padding:12px;border-radius:10px;margin:10px 0;text-align:center;border:1px solid #e5e7eb">
 <div>الاستهلاك: <b id="consumption">0</b> وحدة</div>
 <div style="font-size:18px;margin-top:6px">المبلغ: <b id="amount" style="color:#0bb350">0</b> ريال (600 × <span id="units">0</span>)</div>
 </div>
 <button class="btn btn-green" style="width:100%;padding:14px;font-size:16px" onclick="saveInvoice()">💾 حفظ الفاتورة</button>
-<button class="btn btn-blue" style="width:
+<button class="btn btn-blue" style="width:100%" onclick="printInvoice()">🖨️ طباعة الفاتورة</button>
+<button class="btn btn-gray" style="width:100%" onclick="clearFound()">مسح وإعادة المسح</button>
+</div>
+<div style="margin-top:16px">
+<label style="font-weight:800">🔍 أو ابحث يدوياً بالكود أو الاسم (يعمل بدون كاميرا)</label>
+<input class="input" id="manualSearch" placeholder="اكتب WS-0001 أو اسم المشترك" oninput="manualSearch()" style="border-color:#7c3aed;border-width:2px">
+<div id="manualList"></div>
+</div>
+<div id="noSubs" style="text-align:center;color:#999;padding:20px;background:#f8f9ff;border-radius:12px;margin-top:12px">لا يوجد مشتركون. أضفهم من خانة المشتركين.</div>
+</div>
+</div>
+
+<div id="qabd" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>💰 سند قبض</b></div><div class="white"><input class="input" id="qS" placeholder="ابحث بالكود" oninput="renderQ()"><div id="qL"></div><div id="qE" style="text-align:center;color:#999;padding:20px">اكتب كود المشترك<br>عند المسح بالباركود يظهر الاسم هنا</div></div></div>
+<div id="sarf" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>💸 سند صرف</b></div><div class="white" style="text-align:center;padding:20px;color:#999">سند صرف - قريباً</div></div>
+<div id="set" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>⚙️ الإعدادات</b></div><div class="white"><h3>سعر الوحدة</h3><input class="input" id="unitPrice" value="600" oninput="saveSettings()"><h3 style="margin-top:12px">بادئة الكود</h3><input class="input" id="prefix" value="WS-" oninput="saveSettings()"><div style="margin-top:16px;background:#f0f8ff;padding:12px;border-radius:10px"><button class="btn btn-blue" style="width:100%" onclick="location.reload()">🔄 تحديث الصفحة</button><button class="btn btn-gray" style="width:100%" onclick="localStorage.clear(); alert('تم مسح البيانات'); location.reload()">🗑️ مسح البيانات</button></div></div></div>
+<div id="kashf" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>📊 كشف حساب</b></div><div class="white"><input class="input" id="kashfSearch" placeholder="ابحث بالكود WS-0001" oninput="renderKashf()"><div id="kashfList" style="text-align:center;color:#999;padding:16px">ابحث عن مشترك لعرض كشف حسابه</div></div></div>
+<div id="taq" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>📈 تقارير</b></div><div class="white"><div style="text-align:center"><h3 id="reportCount">0 مشترك</h3><p>إجمالي الفواتير: <b id="reportInvoices">0</b></p><p>إجمالي المبالغ: <b id="reportTotal">0 ريال</b></p></div><button class="btn btn-blue" style="width:100%;margin-top:12px" onclick="updateReports()">🔄 تحديث التقرير</button></div></div>
+<div id="down" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>تحميل البيانات</b></div><div class="white" style="text-align:center;padding:30px"><button class="btn btn-blue" onclick="document.getElementById('csv').click()">📥 اختيار ملف CSV</button></div></div>
+<div id="sync" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>مزامنة</b></div><div class="white" style="text-align:center;padding:30px"><button class="btn btn-green">☁️ بدء المزامنة</button></div></div>
+<div id="tas" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>تسوية</b></div><div class="white" style="text-align:center;color:#999;padding:20px">التسويات</div></div>
+<div id="sij" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>آخر السجلات - الفواتير</b></div><div class="white"><div id="invoicesLog"></div></div></div>
+<div id="ras" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>رسائل جماعية</b></div><div class="white"><textarea class="input" rows="4" placeholder="نص الرسالة"></textarea><button class="btn btn-green" style="width:100%">إرسال للكل</button></div></div>
+<div id="sand" class="page"><div class="page-header"><button class="btn-back" onclick="openPage('main')">← رجوع</button><b>إدارة صناديق المحصلين</b></div><div class="white" style="text-align:center;padding:30px">إدارة صناديق المحصلين<br><br><button class="btn btn-dark" style="width:100%" onclick="alert('إجمالي المشتركين: '+subs.length)">عرض عدد المشتركين</button></div></div>
+
+<div id="addModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px">
+<div style="background:#fff;border-radius:18px;padding:18px;width:100%;max-width:380px;max-height:90vh;overflow:auto">
+<h3 style="text-align:center;margin-bottom:12px">إضافة مشترك جديد</h3>
+<label style="font-size:12px;font-weight:700">كود المشترك (باركود)</label>
+<div style="display:flex;gap:6px"><input class="input" id="n_code" placeholder="WS-0001"><button type="button" class="btn btn-gray" onclick="genCode()">توليد</button></div>
+<input class="input" id="n_name" placeholder="اسم المشترك *">
+<input class="input" id="n_no" placeholder="رقم العداد / المحل">
+<input class="input" id="n_phone" placeholder="رقم الهاتف">
+<div style="text-align:center;margin:10px 0;background:#f8f9ff;padding:10px;border-radius:10px"><div id="barcodePreviewBox" style="font-weight:900;font-size:18px;letter-spacing:2px;border:2px solid #000;padding:8px;display:inline-block;min-width:150px">WS-0001</div><div id="codeText" style="font-size:12px;color:#666;margin-top:6px"></div></div>
+<button class="btn btn-green" style="width:100%" onclick="saveM()">💾 حفظ مع الباركود</button>
+<button style="width:100%;margin-top:8px;padding:12px;border:none;background:#f1f2f6;border-radius:12px;font-weight:700" onclick="closeM()">إلغاء</button>
+</div>
+</div>
+
+<div id="barcodeModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:200;padding:16px">
+<div style="background:#fff;border-radius:18px;padding:20px;width:100%;max-width:360px;text-align:center">
+<h3 id="bcName"></h3><p id="bcCode" style="font-weight:900;color:#2563eb;margin:8px 0;font-size:18px"></p>
+<div id="bcDisplay" style="font-size:32px;letter-spacing:3px;font-weight:900;border:3px solid #000;padding:12px;margin:12px 0;display:inline-block">WS-0001</div>
+<br>
+<button class="btn btn-blue" style="margin-top:12px;width:100%" onclick="printBarcode()">🖨️ طباعة الباركود</button>
+<button style="width:100%;margin-top:8px;padding:12px;border:none;background:#f1f2f6;border-radius:12px;font-weight:700" onclick="document.getElementById('barcodeModal').style.display='none'">إغلاق</button>
+</div>
+</div>
+
+<input type="file" id="csv" accept=".csv" style="display:none" onchange="handleCSV(this)">
+
+<script>
+function openPage(id){
+  try{
+    var pages=document.querySelectorAll('.page');
+    for(var i=0;i<pages.length;i++) pages[i].classList.remove('active');
+    var main=document.getElementById('main');
+    if(main) main.style.display='none';
+    if(id==='main'){
+      if(main) main.style.display='block';
+      stopScan();
+      return;
+    }
+    var target=document.getElementById(id);
+    if(target){
+      target.classList.add('active');
+      if(id==='mosh') render();
+      if(id==='faw') checkSubs();
+      if(id==='sij') renderInvoices();
+      if(id==='taq') updateReports();
+    }else{
+      alert('الصفحة '+id+' غير موجودة');
+      if(main) main.style.display='block';
+    }
+  }catch(e){
+    alert('خطأ في الفتح: '+e.message);
+    var m=document.getElementById('main');
+    if(m) m.style.display='block';
+  }
+}
+window.openPage=openPage;
+window.openP=openPage;
+var subs=[];
+var invoices=[];
+try{
+  var s1=localStorage.getItem('water_v5_barcode');
+  var s2=localStorage.getItem('water_v5_code');
+  subs=JSON.parse(s1||s2||'[]');
+  invoices=JSON.parse(localStorage.getItem('water_invoices')||'[]');
+}catch(e){ subs=[]; invoices=[]; }
+var prefix = localStorage.getItem('code_prefix')||'WS-';
+var unitPrice = parseInt(localStorage.getItem('unit_price')||'600')||600;
+var html5QrcodeScanner=null;
+var currentFound=null;
+function save(){
+  try{
+    localStorage.setItem('water_v5_barcode', JSON.stringify(subs));
+    localStorage.setItem('water_invoices', JSON.stringify(invoices));
+    var dc=document.getElementById('dc');
+    if(dc) dc.innerText=subs.length+' مشترك';
+  }catch(e){}
+}
+function saveSettings(){
+  var pre=document.getElementById('prefix');
+  var up=document.getElementById('unitPrice');
+  if(pre) localStorage.setItem('code_prefix', pre.value);
+  if(up) localStorage.setItem('unit_price', up.value);
+  prefix=pre?pre.value:'WS-';
+  unitPrice=up? (parseInt(up.value)||600) : 600;
+}
+function genCode(){
+  var maxNum=1000;
+  for(var i=0;i<subs.length;i++){
+    var n=parseInt((subs[i].code||'').replace(/\D/g,''));
+    if(!isNaN(n)&&n>maxNum) maxNum=n;
+  }
+  var code=(localStorage.getItem('code_prefix')||'WS-')+String(maxNum+1).padStart(4,'0');
+  var el=document.getElementById('n_code');
+  if(el) el.value=code;
+  updateBarcodePreview(code);
+  return code;
+}
+function updateBarcodePreview(code){
+  var box=document.getElementById('barcodePreviewBox');
+  var txt=document.getElementById('codeText');
+  if(box) box.innerText=code;
+  if(txt) txt.innerText=code;
+}
+function addM(){ genCode(); var m=document.getElementById('addModal'); if(m) m.style.display='flex'; }
+function closeM(){ var m=document.getElementById('addModal'); if(m) m.style.display='none'; }
+function saveM(){
+  var nameEl=document.getElementById('n_name');
+  var name=nameEl? nameEl.value.trim() : '';
+  if(!name){ alert('اكتب اسم المشترك'); return; }
+  var codeEl=document.getElementById('n_code');
+  var code=codeEl? codeEl.value.trim() : '';
+  if(!code) code=genCode();
+  for(var i=0;i<subs.length;i++){ if(subs[i].code===code){ code=genCode(); break; } }
+  var noEl=document.getElementById('n_no');
+  var phoneEl=document.getElementById('n_phone');
+  subs.push({id:Date.now(), code:code, name:name, no: noEl? noEl.value.trim():'', phone: phoneEl? phoneEl.value.trim():'', lastReading:0, sel:false});
+  save(); closeM(); render();
+  if(nameEl) nameEl.value='';
+  if(noEl) noEl.value='';
+  if(phoneEl) phoneEl.value='';
+  alert('تم الحفظ: '+name+' - '+code);
+}
+function render(){
+  var qEl=document.getElementById('sSearch');
+  var q=qEl? qEl.value.toLowerCase() : '';
+  var list=document.getElementById('list');
+  var c1=document.getElementById('c1');
+  var c2=document.getElementById('c2');
+  var selEl=document.getElementById('sel');
+  var empty=document.getElementById('empty');
+  if(!list) return;
+  var f=[];
+  for(var i=0;i<subs.length;i++){
+    var s=subs[i];
+    var hay=(s.name+' '+s.no+' '+s.phone+' '+s.code).toLowerCase();
+    if(!q||hay.indexOf(q)>-1) f.push(s);
+  }
+  if(c1) c1.innerText=f.length;
+  if(c2) c2.innerText=subs.length;
+  var selCount=0; for(var i=0;i<subs.length;i++) if(subs[i].sel) selCount++;
+  if(selEl) selEl.innerText=selCount;
+  list.innerHTML='';
+  if(f.length==0){ if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  for(var i=0;i<f.length;i++){
+    var s=f[i];
+    var d=document.createElement('div');
+    d.style="background:#fff;border:1px solid #eee;border-radius:12px;padding:10px;margin-bottom:8px";
+    d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;align-items:center"><input type="checkbox" '+(s.sel?'checked':'')+' onchange="tog('+s.id+',this.checked)"><div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b>'+s.name+'</b><span class="code-badge">'+s.code+'</span></div><small style="color:#666">'+(s.no||'')+' - '+(s.phone||'')+' - آخر قراءة: '+(s.lastReading||0)+'</small></div></div><div style="display:flex;gap:4px"><button onclick="showBarcode('+s.id+')" style="background:#e0f2fe;color:#0369a1;border:none;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:700">▦ باركود</button><button onclick="del('+s.id+')" style="background:#ffe4e6;color:#e11d48;border:none;padding:6px 8px;border-radius:8px;font-weight:700">حذف</button></div></div>';
+    list.appendChild(d);
+  }
+}
+function showBarcode(id){
+  var s=null; for(var i=0;i<subs.length;i++) if(subs[i].id==id) s=subs[i];
+  if(!s) return;
+  document.getElementById('bcName').innerText=s.name;
+  document.getElementById('bcCode').innerText=s.code;
+  document.getElementById('bcDisplay').innerText=s.code;
+  document.getElementById('barcodeModal').style.display='flex';
+}
+function printBarcode(){
+  var code=document.getElementById('bcCode').innerText;
+  var name=document.getElementById('bcName').innerText;
+  var html='<html dir="rtl"><head><meta charset="utf-8"><style>body{text-align:center;font-family:Tahoma;padding:20px}.code{font-size:40px;font-weight:900;letter-spacing:4px;border:3px solid #000;padding:15px;display:inline-block;margin:20px}</style></head><body><h2>'+name+'</h2><div class="code">'+code+'</div><br><p>'+code+'</p><br><button onclick="window.print()" style="padding:12px 24px;font-size:16px">طباعة</button><script>setTimeout(function(){window.print()},500)<\/script></body></html>';
+  var w=window.open(''); w.document.write(html); w.document.close();
+}
+function tog(id,v){ for(var i=0;i<subs.length;i++) if(subs[i].id==id) subs[i].sel=v; save(); render(); }
+function del(id){ if(confirm('حذف المشترك؟')){ var newSubs=[]; for(var i=0;i<subs.length;i++) if(subs[i].id!=id) newSubs.push(subs[i]); subs=newSubs; save(); render(); } }
+function selAll(){
+  var qEl=document.getElementById('sSearch');
+  var q=qEl? qEl.value.toLowerCase() : '';
+  for(var i=0;i<subs.length;i++){
+    var hay=(subs[i].name+subs[i].no+subs[i].phone+subs[i].code).toLowerCase();
+    if(!q||hay.indexOf(q)>-1) subs[i].sel=true;
+  }
+  save(); render();
+}
+function expCSV(){
+  if(!subs.length){ alert('لا يوجد مشتركون'); return; }
+  var csv="\uFEFFكود المشترك,الاسم,رقم العداد,الهاتف,آخر قراءة\n";
+  for(var i=0;i<subs.length;i++){ var s=subs[i]; csv+='"'+s.code+'","'+s.name+'","'+s.no+'","'+s.phone+'","'+(s.lastReading||0)+'"\n'; }
+  var b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='المشتركين_بالباركود.csv'; a.click();
+}
+function handleCSV(input){
+  var file=input.files[0]; if(!file) return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var lines=e.target.result.split('\n');
+    for(var idx=0;idx<lines.length;idx++){
+      var line=lines[idx]; if(idx==0||!line.trim()) continue;
+      var c=line.split(',').map(function(x){return x.replace(/"/g,'').trim()});
+      if(c.length>=2){
+        if(c[0].indexOf('WS-')==0||c[0].indexOf('M-')==0){
+          subs.push({id:Date.now()+idx+Math.random(), code:c[0], name:c[1], no:c[2]||'', phone:c[3]||'', lastReading:parseInt(c[4]||'0')||0, sel:false});
+        }else{
+          subs.push({id:Date.now()+idx+Math.random(), code:genCode(), name:c[0], no:c[1]||'', phone:c[2]||'', lastReading:0, sel:false});
+        }
+      }
+    }
+    save(); render(); alert('تم الاستيراد');
+  };
+  r.readAsText(file,'UTF-8'); input.value='';
+}
+function checkSubs(){ var el=document.getElementById('noSubs'); if(el) el.style.display= subs.length?'none':'block'; }
+function startScan(){
+  var reader=document.getElementById('reader');
+  var scanBtn=document.getElementById('scanBtn');
+  var stopBtn=document.getElementById('stopBtn');
+  var status=document.getElementById('camStatus');
+  if(typeof Html5Qrcode==='undefined'){
+    if(status) status.innerText='الماسح يحتاج إنترنت لأول مرة. استخدم البحث اليدوي: اكتب الكود WS-0001 وسيظهر الاسم.';
+    alert('مكتبة الكاميرا تحتاج إنترنت. سيعمل البحث اليدوي بالكود.');
+    document.getElementById('manualSearch').focus();
+    return;
+  }
+  if(reader) reader.style.display='block';
+  if(stopBtn) stopBtn.style.display='block';
+  if(scanBtn) scanBtn.style.display='none';
+  if(status) status.innerText='وجه الكاميرا للباركود...';
+  try{
+    html5QrcodeScanner = new Html5Qrcode("reader");
+    html5QrcodeScanner.start({ facingMode:"environment" }, { fps:10, qrbox:{width:250, height:100} }, onScanSuccess, function(){}).catch(function(err){
+      alert('لا يمكن فتح الكاميرا: '+err);
+      stopScan();
+    });
+  }catch(err){
+    alert('خطأ الكاميرا: '+err.message);
+    stopScan();
+  }
+}
+function stopScan(){
+  try{
+    if(html5QrcodeScanner){ html5QrcodeScanner.stop().then(function(){ try{html5QrcodeScanner.clear();}catch(e){} }).catch(function(){}); html5QrcodeScanner=null; }
+  }catch(e){}
+  var reader=document.getElementById('reader');
+  var scanBtn=document.getElementById('scanBtn');
+  var stopBtn=document.getElementById('stopBtn');
+  if(reader) reader.style.display='none';
+  if(stopBtn) stopBtn.style.display='none';
+  if(scanBtn) scanBtn.style.display='block';
+}
+function onScanSuccess(decodedText){
+  var txt=(decodedText||'').trim();
+  var sub=null;
+  for(var i=0;i<subs.length;i++) if(subs[i].code===txt) { sub=subs[i]; break; }
+  if(!sub){
+    for(var i=0;i<subs.length;i++){
+      if(txt.indexOf(subs[i].code)>-1 || subs[i].code.indexOf(txt)>-1){ sub=subs[i]; break; }
+    }
+  }
+  if(sub){
+    stopScan();
+    showFound(sub);
+    if(navigator.vibrate) navigator.vibrate(200);
+  }
+}
+function showFound(sub){
+  currentFound=sub;
+  var box=document.getElementById('foundBox');
+  if(box) box.style.display='block';
+  document.getElementById('foundCode').innerText=sub.code;
+  document.getElementById('foundName').innerText=sub.name;
+  document.getElementById('foundDetails').innerHTML='رقم العداد: '+(sub.no||'-')+'<br>الهاتف: '+(sub.phone||'-')+'<br>آخر قراءة: '+(sub.lastReading||0);
+  document.getElementById('foundCodeText').innerText=sub.code;
+  document.getElementById('prevReading').innerText=sub.lastReading||0;
+  var readingEl=document.getElementById('reading');
+  if(readingEl) readingEl.value='';
+  document.getElementById('consumption').innerText='0';
+  document.getElementById('amount').innerText='0';
+  document.getElementById('units').innerText='0';
+  if(box) box.scrollIntoView({behavior:'smooth'});
+}
+function clearFound(){ var box=document.getElementById('foundBox'); if(box) box.style.display='none'; currentFound=null; var r=document.getElementById('reading'); if(r) r.value=''; }
+var readingEl=document.getElementById('reading');
+if(readingEl){
+  readingEl.addEventListener('input', function(){
+    var curr=parseInt(this.value)||0;
+    var prev=currentFound? (currentFound.lastReading||0):0;
+    var cons=Math.max(0, curr-prev);
+    document.getElementById('consumption').innerText=cons;
+    document.getElementBy
