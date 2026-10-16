@@ -7,7 +7,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.PermissionRequest;
 import android.webkit.WebView;
 import android.os.Build;
-import java.io.File;
+
 public class MainActivity extends Activity {
     private WebView webView;
     @Override
@@ -15,7 +15,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         webView = new WebView(this);
         setContentView(webView);
-        WebView.setWebContentsDebuggingEnabled(true);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -28,12 +27,6 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(true);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         s.setMediaPlaybackRequiresUserGesture(false);
-        try {
-            File dbDir = getDir("databases", MODE_PRIVATE);
-            s.setDatabasePath(dbDir.getPath());
-            s.setAppCachePath(getCacheDir().getPath());
-            s.setAppCacheEnabled(true);
-        } catch (Exception e) {}
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
